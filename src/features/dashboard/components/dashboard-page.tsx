@@ -7,7 +7,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
-import { authDummySummary, roleLabels } from "@/features/auth/data/auth-seed";
+import { roleLabels } from "@/features/auth/data/auth-seed";
 import type { AuthSeed, SessionUser } from "@/features/auth/types";
 import { getProfileName } from "@/features/auth/lib/auth-helpers";
 
@@ -42,7 +42,7 @@ function AdminDashboard({ data }: { data: AuthSeed }) {
           {
             icon: Users,
             label: "TOTAL PENGGUNA",
-            note: "Berdasarkan USER_ACCOUNT dummy",
+            note: "Hard-coded + registrasi web",
             tone: "blue",
             value: String(data.users.length),
           },
@@ -71,7 +71,6 @@ function AdminDashboard({ data }: { data: AuthSeed }) {
           title="Marketing & Promosi"
         />
       </div>
-      <DummySummary />
     </section>
   );
 }
@@ -264,16 +263,6 @@ function ListPanel({ subtitle, title }: { subtitle: string; title: string }) {
       <div className="mt-8 rounded-lg border border-dashed border-slate-200 px-4 py-8 text-center text-sm font-bold text-slate-400">
         Data belum tersedia karena fitur CRUD terkait akan diimplementasi rekan tim.
       </div>
-    </article>
-  );
-}
-
-function DummySummary() {
-  return (
-    <article className="rounded-xl border border-blue-100 bg-blue-50 p-5 text-sm font-bold text-blue-800">
-      Data dummy auth: {authDummySummary.userAccount} USER_ACCOUNT, {authDummySummary.role} ROLE,{" "}
-      {authDummySummary.customer} CUSTOMER, {authDummySummary.organizer} ORGANIZER, dan{" "}
-      {authDummySummary.adminAccount} akun admin hard-coded.
     </article>
   );
 }
