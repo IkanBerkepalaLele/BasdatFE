@@ -3,15 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { Toast } from "@/shared/components/toast";
 import { DashboardPage } from "@/features/dashboard/components/dashboard-page";
+import { ProfilePage } from "@/features/profile/components/profile-page";
 import { roleLabels } from "../data/auth-seed";
 import {
   authenticate,
   cloneAuthSeed,
   createUser,
-  getProfileName,
   type RegisterPayload,
 } from "../lib/auth-helpers";
-import type { AuthSeed, SessionUser, ToastState } from "../types";
+import type { AuthSeed, ProfileUpdatePayload, SessionUser, ToastState } from "../types";
 import { AppNavbar } from "./app-navbar";
 import { LoginPage } from "./login-page";
 import { RegisterPage } from "./register-page";
@@ -98,6 +98,85 @@ export function AuthApp() {
     showToast({ tone: "success", message: "Akun baru berhasil dibuat. Silakan login." });
   }
 
+  function updateProfile(payload: ProfileUpdatePayload) {
+    if (!currentUser) return;
+
+    if (currentUser.role === "customer") {
+      if (!payload.fullName?.trim() || !payload.phoneNumber?.trim()) {
+        showToast({ tone: "error", message: "Nama lengkap dan nomor telepon wajib diisi." });
+        return;
+      }
+
+      setData((current) => ({
+        ...current,
+        customers: current.customers.map((customer) =>
+          customer.userId === currentUser.userId
+            ? {
+                ...customer,
+                fullName: payload.fullName!.trim(),
+                phoneNumber: payload.phoneNumber!.trim(),
+              }
+            : customer,
+        ),
+      }));
+      showToast({ tone: "success", message: "Profil berhasil diperbarui." });
+      return;
+    }
+
+    if (currentUser.role === "organizer") {
+      if (!payload.organizerName?.trim() || !payload.contactEmail?.trim()) {
+        showToast({ tone: "error", message: "Nama organizer dan email kontak wajib diisi." });
+        return;
+      }
+
+      setData((current) => ({
+        ...current,
+        organizers: current.organizers.map((organizer) =>
+          organizer.userId === currentUser.userId
+            ? {
+                ...organizer,
+                organizerName: payload.organizerName!.trim(),
+                contactEmail: payload.contactEmail!.trim(),
+              }
+            : organizer,
+        ),
+      }));
+      showToast({ tone: "success", message: "Profil berhasil diperbarui." });
+    }
+  }
+
+  function updatePassword(oldPassword: string, newPassword: string, confirmation: string) {
+    if (!currentUser) return;
+
+    if (!oldPassword || !newPassword || !confirmation) {
+      showToast({ tone: "error", message: "Seluruh field password wajib diisi." });
+      return;
+    }
+
+    if (oldPassword !== currentUser.password) {
+      showToast({ tone: "error", message: "Password lama tidak sesuai." });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      showToast({ tone: "error", message: "Password baru minimal 6 karakter." });
+      return;
+    }
+
+    if (newPassword !== confirmation) {
+      showToast({ tone: "error", message: "Konfirmasi password baru tidak cocok." });
+      return;
+    }
+
+    setData((current) => ({
+      ...current,
+      users: current.users.map((user) =>
+        user.userId === currentUser.userId ? { ...user, password: newPassword } : user,
+      ),
+    }));
+    showToast({ tone: "success", message: "Password berhasil diubah." });
+  }
+
   if (!currentUser) {
     return (
       <>
@@ -123,6 +202,8 @@ export function AuthApp() {
       onDashboard={() => setActivePage("dashboard")}
       onLogout={logout}
       onProfile={() => setActivePage("profile")}
+      onProfileUpdate={updateProfile}
+      onPasswordUpdate={updatePassword}
       toast={toast}
       user={currentUser}
     />
@@ -135,7 +216,9 @@ function AuthenticatedApp({
   onBlockedFeature,
   onDashboard,
   onLogout,
+  onPasswordUpdate,
   onProfile,
+  onProfileUpdate,
   toast,
   user,
 }: {
@@ -144,12 +227,12 @@ function AuthenticatedApp({
   onBlockedFeature: (feature: string) => void;
   onDashboard: () => void;
   onLogout: () => void;
+  onPasswordUpdate: (oldPassword: string, newPassword: string, confirmation: string) => void;
   onProfile: () => void;
+  onProfileUpdate: (payload: ProfileUpdatePayload) => void;
   toast: ToastState;
   user: SessionUser;
 }) {
-  const profileName = getProfileName(data, user);
-
   return (
     <div className="min-h-screen bg-[#f7f8fb] text-slate-950">
       <AppNavbar
@@ -166,13 +249,14 @@ function AuthenticatedApp({
             <DashboardPage data={data} user={user} />
           </div>
         ) : (
-          <section className="mt-5 rounded-xl bg-white p-8 shadow-sm">
-            <p className="text-sm font-extrabold uppercase text-blue-600">{roleLabels[user.role]}</p>
-            <h1 className="mt-2 text-3xl font-extrabold tracking-normal text-slate-950">Profil Saya</h1>
-            <p className="mt-2 text-slate-500">
-              Halaman profil {profileName} akan diisi pada langkah berikutnya.
-            </p>
-          </section>
+          <div className="mt-5">
+            <ProfilePage
+              data={data}
+              onPasswordUpdate={onPasswordUpdate}
+              onProfileUpdate={onProfileUpdate}
+              user={user}
+            />
+          </div>
         )}
       </main>
     </div>

@@ -40,3 +40,10 @@ export type ToastState = {
   tone: "success" | "error" | "info";
   message: string;
 } | null;
+
+export type ProfileUpdatePayload = {
+  fullName?: string;
+  phoneNumber?: string;
+  organizerName?: string;
+  contactEmail?: string;
+};
