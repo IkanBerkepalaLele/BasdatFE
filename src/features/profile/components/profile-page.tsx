@@ -230,7 +230,7 @@ function ProfileDetail({
         </>
       )}
       {user.role === "admin" && (
-        <ProfileField icon={<ShieldCheck size={18} />} label="Akses" value="Hard-coded administrator" />
+        <ProfileField icon={<ShieldCheck size={18} />} label="Akses" value="Admin" />
       )}
       <ProfileField icon={<UserRound size={18} />} label="Username" value={`@${user.username}`} />
     </div>

@@ -13,6 +13,11 @@ export type Role = {
   label: string;
 };
 
+export type AccountRole = {
+  roleId: string;
+  userId: string;
+};
+
 export type Customer = {
   customerId: string;
   fullName: string;
@@ -30,6 +35,7 @@ export type Organizer = {
 export type AuthSeed = {
   users: UserAccount[];
   roles: Role[];
+  accountRoles: AccountRole[];
   customers: Customer[];
   organizers: Organizer[];
 };

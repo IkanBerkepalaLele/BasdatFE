@@ -32,6 +32,7 @@ export function getOrganizer(data: AuthSeed, userId: string) {
 
 export function createUser(data: AuthSeed, role: Exclude<RoleName, "admin">, form: RegisterPayload): AuthSeed {
   const nextUserId = `usr-${String(data.users.length + 1).padStart(3, "0")}`;
+  const nextRole = data.roles.find((item) => item.roleName === role);
   const nextUser: UserAccount = {
     userId: nextUserId,
     username: form.username.trim(),
@@ -50,6 +51,9 @@ export function createUser(data: AuthSeed, role: Exclude<RoleName, "admin">, for
     return {
       ...data,
       users: [...data.users, nextUser],
+      accountRoles: nextRole
+        ? [...data.accountRoles, { roleId: nextRole.roleId, userId: nextUserId }]
+        : data.accountRoles,
       customers: [...data.customers, nextCustomer],
     };
   }
@@ -64,6 +68,9 @@ export function createUser(data: AuthSeed, role: Exclude<RoleName, "admin">, for
   return {
     ...data,
     users: [...data.users, nextUser],
+    accountRoles: nextRole
+      ? [...data.accountRoles, { roleId: nextRole.roleId, userId: nextUserId }]
+      : data.accountRoles,
     organizers: [...data.organizers, nextOrganizer],
   };
 }

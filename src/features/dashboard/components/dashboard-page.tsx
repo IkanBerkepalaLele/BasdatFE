@@ -42,7 +42,7 @@ function AdminDashboard({ data }: { data: AuthSeed }) {
           {
             icon: Users,
             label: "TOTAL PENGGUNA",
-            note: "Hard-coded + registrasi web",
+            note: "Pengguna aktif",
             tone: "blue",
             value: String(data.users.length),
           },
@@ -74,7 +74,7 @@ function AdminDashboard({ data }: { data: AuthSeed }) {
     </section>
   );
 }
-
+// TODO later
 function OrganizerDashboard({ data, user }: { data: AuthSeed; user: SessionUser }) {
   return (
     <section className="space-y-6">
@@ -82,13 +82,14 @@ function OrganizerDashboard({ data, user }: { data: AuthSeed; user: SessionUser 
         action="Kelola Acara"
         actionSecondary="Venue"
         eyebrow="Dashboard Penyelenggara"
-        subtitle="Kelola 0 acara aktif Anda"
+        subtitle="Anda belum mengelola acara."
         title={getProfileName(data, user)}
         tone="dark"
       />
       <StatGrid
         stats={[
-          { icon: CalendarDays, label: "ACARA AKTIF", note: "Belum tersedia", tone: "blue", value: "0" },
+          // TODO later
+          { icon: CalendarDays, label: "ACARA AKTIF", note: "Belum tersedia", tone: "blue", value: "0" }, 
           { icon: Ticket, label: "TIKET TERJUAL", note: "Belum tersedia", tone: "green", value: "0" },
           { icon: TrendingUp, label: "REVENUE", note: "Belum tersedia", tone: "purple", value: zeroCurrency },
           { icon: MapPin, label: "VENUE MITRA", note: "Belum tersedia", tone: "orange", value: "0" },
@@ -102,17 +103,19 @@ function OrganizerDashboard({ data, user }: { data: AuthSeed; user: SessionUser 
   );
 }
 
+// TODO later
 function CustomerDashboard({ data, user }: { data: AuthSeed; user: SessionUser }) {
   return (
     <section className="space-y-6">
       <HeroBanner
         action="Cari Tiket"
         eyebrow="Selamat datang kembali"
-        subtitle="0 acara menarik menunggu Anda"
+        subtitle="Belum ada acara yang tersedia"
         title={getProfileName(data, user)}
         tone="blue"
       />
       <StatGrid
+        // TODO later
         stats={[
           { icon: Ticket, label: "TIKET AKTIF", note: "Belum tersedia", tone: "blue", value: "0" },
           { icon: CalendarDays, label: "ACARA DIIKUTI", note: "Belum tersedia", tone: "green", value: "0" },
@@ -240,7 +243,7 @@ function InsightCard({ action, rows, title }: { action: string; rows: [string, s
       <button
         className="mt-5 h-10 w-full cursor-not-allowed rounded-full border border-slate-200 text-sm font-extrabold text-slate-300 shadow-sm"
         disabled
-        title="Fitur ini akan diimplementasi rekan tim"
+        title="Fitur belum diimplementasi"
       >
         {action}
       </button>
@@ -261,7 +264,7 @@ function ListPanel({ subtitle, title }: { subtitle: string; title: string }) {
         </button>
       </div>
       <div className="mt-8 rounded-lg border border-dashed border-slate-200 px-4 py-8 text-center text-sm font-bold text-slate-400">
-        Data belum tersedia karena fitur CRUD terkait akan diimplementasi rekan tim.
+        Data belum tersedia.
       </div>
     </article>
   );
