@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Toast } from "@/shared/components/toast";
-import { authDummySummary, roleLabels } from "../data/auth-seed";
+import { DashboardPage } from "@/features/dashboard/components/dashboard-page";
+import { roleLabels } from "../data/auth-seed";
 import {
   authenticate,
   cloneAuthSeed,
@@ -160,17 +161,19 @@ function AuthenticatedApp({
       />
       <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <Toast toast={toast} />
-        <section className="mt-5 rounded-xl bg-white p-8 shadow-sm">
-          <p className="text-sm font-extrabold uppercase text-blue-600">{roleLabels[user.role]}</p>
-          <h1 className="mt-2 text-3xl font-extrabold tracking-normal text-slate-950">
-            {activePage === "dashboard" ? "Dashboard" : "Profil Saya"}
-          </h1>
-          <p className="mt-2 text-slate-500">
-            {activePage === "dashboard"
-              ? `Selamat datang, ${profileName}. Total dummy USER_ACCOUNT saat ini ${authDummySummary.userAccount}.`
-              : "Halaman profil akan diisi pada langkah berikutnya."}
-          </p>
-        </section>
+        {activePage === "dashboard" ? (
+          <div className="mt-5">
+            <DashboardPage data={data} user={user} />
+          </div>
+        ) : (
+          <section className="mt-5 rounded-xl bg-white p-8 shadow-sm">
+            <p className="text-sm font-extrabold uppercase text-blue-600">{roleLabels[user.role]}</p>
+            <h1 className="mt-2 text-3xl font-extrabold tracking-normal text-slate-950">Profil Saya</h1>
+            <p className="mt-2 text-slate-500">
+              Halaman profil {profileName} akan diisi pada langkah berikutnya.
+            </p>
+          </section>
+        )}
       </main>
     </div>
   );
