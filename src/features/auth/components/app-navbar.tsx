@@ -38,12 +38,14 @@ export function AppNavbar({
   onFeatureBlocked,
   onLogout,
   onProfile,
+  onVenue,
   role,
 }: {
   onDashboard: () => void;
   onFeatureBlocked: (feature: string) => void;
   onLogout: () => void;
   onProfile: () => void;
+  onVenue: () => void;
   role: RoleName;
 }) {
   const [open, setOpen] = useState(false);
@@ -52,6 +54,8 @@ export function AppNavbar({
   function handleMenu(label: string) {
     if (label === "Dashboard") {
       onDashboard();
+    } else if (label === "Manajemen Venue" || label === "Venue") {
+      onVenue();
     } else if (label === "Profile") {
       onProfile();
     } else if (label === "Logout") {
@@ -71,7 +75,7 @@ export function AppNavbar({
         <nav className="hidden min-w-0 flex-1 items-center justify-start gap-1 overflow-x-auto px-2 lg:flex">
           {items.map((item) => {
             const active = item === "Dashboard";
-            const clickable = item === "Dashboard" || item === "Profile" || item === "Logout";
+            const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue";
 
             return (
               <button
@@ -123,7 +127,7 @@ export function AppNavbar({
         <div className="border-t border-slate-200 bg-white px-4 py-3 lg:hidden">
           <div className="grid gap-2">
             {items.map((item) => {
-              const clickable = item === "Dashboard" || item === "Profile" || item === "Logout";
+              const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue";
               return (
                 <button
                   className={`rounded-lg px-3 py-3 text-left text-sm font-extrabold ${
