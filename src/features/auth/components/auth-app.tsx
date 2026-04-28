@@ -5,6 +5,7 @@ import { Toast } from "@/shared/components/toast";
 import { DashboardPage } from "@/features/dashboard/components/dashboard-page";
 import { ProfilePage } from "@/features/profile/components/profile-page";
 import { VenueListPage } from "@/features/venue/components/venue-list-page";
+import { EventListPage } from "@/features/event/components/event-list-page";
 import { roleLabels } from "../data/auth-seed";
 import {
   authenticate,
@@ -18,7 +19,7 @@ import { LoginPage } from "./login-page";
 import { RegisterPage } from "./register-page";
 
 type AuthScreen = "login" | "register";
-type AppPage = "dashboard" | "profile" | "venue";
+type AppPage = "dashboard" | "profile" | "venue" | "event";
 
 const sessionStorageKey = "tiktaktuk-auth-user-id";
 
@@ -204,6 +205,7 @@ export function AuthApp() {
       onLogout={logout}
       onProfile={() => setActivePage("profile")}
       onVenue={() => setActivePage("venue")}
+      onEvent={() => setActivePage("event")}
       onProfileUpdate={updateProfile}
       onPasswordUpdate={updatePassword}
       toast={toast}
@@ -217,6 +219,7 @@ function AuthenticatedApp({
   data,
   onBlockedFeature,
   onDashboard,
+  onEvent,
   onLogout,
   onPasswordUpdate,
   onProfile,
@@ -229,6 +232,7 @@ function AuthenticatedApp({
   data: AuthSeed;
   onBlockedFeature: (feature: string) => void;
   onDashboard: () => void;
+  onEvent: () => void;
   onLogout: () => void;
   onPasswordUpdate: (oldPassword: string, newPassword: string, confirmation: string) => void;
   onProfile: () => void;
@@ -241,6 +245,7 @@ function AuthenticatedApp({
     <div className="min-h-screen bg-[#f7f8fb] text-slate-950">
       <AppNavbar
         onDashboard={onDashboard}
+        onEvent={onEvent}
         onFeatureBlocked={onBlockedFeature}
         onLogout={onLogout}
         onProfile={onProfile}
@@ -256,6 +261,17 @@ function AuthenticatedApp({
         ) : activePage === "venue" ? (
           <div className="mt-5">
             <VenueListPage role={user.role} />
+          </div>
+        ) : activePage === "event" ? (
+          <div className="mt-5">
+            <EventListPage
+              role={user.role}
+              organizerId={
+                user.role === "organizer"
+                  ? data.organizers.find((o) => o.userId === user.userId)?.organizerId
+                  : undefined
+              }
+            />
           </div>
         ) : (
           <div className="mt-5">
