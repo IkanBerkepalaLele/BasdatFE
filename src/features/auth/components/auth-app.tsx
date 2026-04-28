@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Toast } from "@/shared/components/toast";
 import { DashboardPage } from "@/features/dashboard/components/dashboard-page";
 import { ProfilePage } from "@/features/profile/components/profile-page";
+import { VenueListPage } from "@/features/venue/components/venue-list-page";
+import { EventListPage } from "@/features/event/components/event-list-page";
 import { roleLabels } from "../data/auth-seed";
 import {
   authenticate,
@@ -17,7 +19,7 @@ import { LoginPage } from "./login-page";
 import { RegisterPage } from "./register-page";
 
 type AuthScreen = "login" | "register";
-type AppPage = "dashboard" | "profile";
+type AppPage = "dashboard" | "profile" | "venue" | "event";
 
 const sessionStorageKey = "tiktaktuk-auth-user-id";
 
@@ -202,6 +204,8 @@ export function AuthApp() {
       onDashboard={() => setActivePage("dashboard")}
       onLogout={logout}
       onProfile={() => setActivePage("profile")}
+      onVenue={() => setActivePage("venue")}
+      onEvent={() => setActivePage("event")}
       onProfileUpdate={updateProfile}
       onPasswordUpdate={updatePassword}
       toast={toast}
@@ -215,9 +219,11 @@ function AuthenticatedApp({
   data,
   onBlockedFeature,
   onDashboard,
+  onEvent,
   onLogout,
   onPasswordUpdate,
   onProfile,
+  onVenue,
   onProfileUpdate,
   toast,
   user,
@@ -226,9 +232,11 @@ function AuthenticatedApp({
   data: AuthSeed;
   onBlockedFeature: (feature: string) => void;
   onDashboard: () => void;
+  onEvent: () => void;
   onLogout: () => void;
   onPasswordUpdate: (oldPassword: string, newPassword: string, confirmation: string) => void;
   onProfile: () => void;
+  onVenue: () => void;
   onProfileUpdate: (payload: ProfileUpdatePayload) => void;
   toast: ToastState;
   user: SessionUser;
@@ -237,9 +245,11 @@ function AuthenticatedApp({
     <div className="min-h-screen bg-[#f7f8fb] text-slate-950">
       <AppNavbar
         onDashboard={onDashboard}
+        onEvent={onEvent}
         onFeatureBlocked={onBlockedFeature}
         onLogout={onLogout}
         onProfile={onProfile}
+        onVenue={onVenue}
         role={user.role}
       />
       <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -247,6 +257,21 @@ function AuthenticatedApp({
         {activePage === "dashboard" ? (
           <div className="mt-5">
             <DashboardPage data={data} user={user} />
+          </div>
+        ) : activePage === "venue" ? (
+          <div className="mt-5">
+            <VenueListPage role={user.role} />
+          </div>
+        ) : activePage === "event" ? (
+          <div className="mt-5">
+            <EventListPage
+              role={user.role}
+              organizerId={
+                user.role === "organizer"
+                  ? data.organizers.find((o) => o.userId === user.userId)?.organizerId
+                  : undefined
+              }
+            />
           </div>
         ) : (
           <div className="mt-5">

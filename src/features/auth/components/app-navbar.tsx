@@ -9,6 +9,7 @@ import { BrandMark } from "@/shared/components/brand-mark";
 const menuItems: Record<RoleName, string[]> = {
   admin: [
     "Dashboard",
+    "Semua Event",
     "Manajemen Venue",
     "Manajemen Kursi",
     "Kategori Tiket",
@@ -35,15 +36,19 @@ const menuItems: Record<RoleName, string[]> = {
 
 export function AppNavbar({
   onDashboard,
+  onEvent,
   onFeatureBlocked,
   onLogout,
   onProfile,
+  onVenue,
   role,
 }: {
   onDashboard: () => void;
+  onEvent: () => void;
   onFeatureBlocked: (feature: string) => void;
   onLogout: () => void;
   onProfile: () => void;
+  onVenue: () => void;
   role: RoleName;
 }) {
   const [open, setOpen] = useState(false);
@@ -52,6 +57,10 @@ export function AppNavbar({
   function handleMenu(label: string) {
     if (label === "Dashboard") {
       onDashboard();
+    } else if (label === "Manajemen Venue" || label === "Venue") {
+      onVenue();
+    } else if (label === "Event Saya" || label === "Cari Event" || label === "Semua Event") {
+      onEvent();
     } else if (label === "Profile") {
       onProfile();
     } else if (label === "Logout") {
@@ -70,8 +79,8 @@ export function AppNavbar({
         </button>
         <nav className="hidden min-w-0 flex-1 items-center justify-start gap-1 overflow-x-auto px-2 lg:flex">
           {items.map((item) => {
-            const active = item === "Dashboard";
-            const clickable = item === "Dashboard" || item === "Profile" || item === "Logout";
+            const active = item === "Dashboard" || item === "Semua Event";
+            const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Semua Event" ;
 
             return (
               <button
@@ -123,7 +132,7 @@ export function AppNavbar({
         <div className="border-t border-slate-200 bg-white px-4 py-3 lg:hidden">
           <div className="grid gap-2">
             {items.map((item) => {
-              const clickable = item === "Dashboard" || item === "Profile" || item === "Logout";
+              const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event";
               return (
                 <button
                   className={`rounded-lg px-3 py-3 text-left text-sm font-extrabold ${
