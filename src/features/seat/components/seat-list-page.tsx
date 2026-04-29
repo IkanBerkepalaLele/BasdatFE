@@ -3,7 +3,7 @@
 import { useMemo, useRef, useEffect, useState } from "react";
 import { 
   Armchair, Plus, X, Building2,
-  ChevronDown, Search,
+  ChevronDown, Search, Pencil,
 } from "lucide-react";
 import type { Seat, HasRelationship } from "../data/seat-seed";
 import { 
@@ -23,10 +23,16 @@ export function SeatListPage({ role }: { role: RoleName }) {
   const [relationships] = useState<HasRelationship[]>(() => [...hasRelationshipSeed]);
   const [searchQuery, setSearchQuery] = useState("");
   const [venueFilter, setVenueFilter] = useState("all");
+  const [editSeat, setEditSeat] = useState<Seat | null>(null);
 
   function handleAdd(data: Seat) {
     setSeats((c) => [...c, data]);
     setShowAdd(false);
+  }
+
+  function handleEdit(updated: Seat) {
+    setSeats((c) => c.map((s) => (s.seatId === updated.seatId ? updated : s)));
+    setEditSeat(null);
   }
 
   const venueOptions = useMemo(() => {
@@ -92,10 +98,11 @@ export function SeatListPage({ role }: { role: RoleName }) {
               <th className="px-4 py-4 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">No. Kursi</th>
               <th className="px-4 py-4 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Venue</th>
               <th className="px-4 py-4 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Status</th>
+              {canManage && <th className="px-4 py-4"></th>}
             </tr>
           </thead>
           <tbody>
-                        {filteredSeats.length === 0 && (
+            {filteredSeats.length === 0 && (
               <tr><td colSpan={5} className="px-6 py-12 text-center text-sm font-bold text-slate-400">Tidak ada kursi yang ditemukan.</td></tr>
             )}
             {filteredSeats.map((seat) => {
@@ -117,14 +124,21 @@ export function SeatListPage({ role }: { role: RoleName }) {
                       {occupied ? "TERISI" : "TERSEDIA"}
                     </span>
                   </td>
+                  {canManage && (
+                    <td className="px-4 py-4">
+                      <button className="lrounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" onClick={() => setEditSeat(seat)}>
+                        <Pencil size={15} />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
-
       {showAdd && <SeatFormModal mode="add" onClose={() => setShowAdd(false)} onSubmit={handleAdd} />}
+      {editSeat && <SeatFormModal mode="edit" seat={editSeat} onClose={() => setEditSeat(null)} onSubmitEdit={handleEdit} />}
     </section>
   );
 }
