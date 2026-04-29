@@ -4,16 +4,17 @@ import { useMemo, useRef, useEffect, useState } from "react";
 import {
   ChevronDown, Plus, Search, 
   Ticket, X, Armchair, CalendarDays, 
-  User, Pencil, Trash2,
+  User, Pencil, Trash2, MapPin,
 } from "lucide-react";
 import type { Ticket as TicketType } from "../data/ticket-seed";
 import {
   ticketSeed, ticketCategorySeed, orderSeed,
   resolveCategory, resolveOrder, resolveEventTitle,
   resolveVenueSeatingType, resolveVenueName ,resolveCustomerName,
-  resolveEventIdFromOrder, countUsedQuota,
-  generateTicketCode, generateTicketId,
+  resolveEventIdFromOrder, countUsedQuota, generateTicketCode, 
+  generateTicketId, resolveVenueIdFromEvent,
 } from "../data/ticket-seed";
+import { seatSeed, hasRelationshipSeed, isSeatOccupied } from "@/features/seat/data/seat-seed";
 import type { RoleName } from "@/features/auth/types";
 
 function formatCurrency(n: number): string {
@@ -36,7 +37,7 @@ export function TicketListPage({
   const [tickets, setTickets] = useState<TicketType[]>(() => [...ticketSeed]);
   const [showAdd, setShowAdd] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [eventFilter, setEventFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [editTicket, setEditTicket] = useState<TicketType | null>(null);
   const [deleteTicket, setDeleteTicket] = useState<TicketType | null>(null);
 
@@ -57,10 +58,10 @@ export function TicketListPage({
 
     const visibleTickets = useMemo(() => {
     if (!isCustomer || !customerId) return tickets;
-    return tickets.filter((t) => {
-        const order = resolveOrder(t.torderId);
-        return order?.customerId === customerId;
-    });
+      return tickets.filter((t) => {
+          const order = resolveOrder(t.torderId);
+          return order?.customerId === customerId;
+      });
     }, [tickets, isCustomer, customerId]);
 
     const eventOptions = useMemo(() => {
@@ -75,17 +76,19 @@ export function TicketListPage({
     }, [visibleTickets]);
 
     const filteredTickets = useMemo(() => {
-    return visibleTickets.filter((t) => {
-        const eventId = resolveEventIdFromOrder(t.torderId);
-        const eventTitle = eventId ? resolveEventTitle(eventId) : "";
-        const matchSearch =
-        searchQuery === "" ||
-        t.ticketCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        eventTitle.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchEvent = eventFilter === "all" || eventId === eventFilter;
-        return matchSearch && matchEvent;
-    });
-    }, [visibleTickets, searchQuery, eventFilter]);
+      return visibleTickets.filter((t) => {
+          const eventId = resolveEventIdFromOrder(t.torderId);
+          const eventTitle = eventId ? resolveEventTitle(eventId) : "";
+          const matchSearch =
+          searchQuery === "" ||
+          t.ticketCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          eventTitle.toLowerCase().includes(searchQuery.toLowerCase());
+          // Semua tiket saat ini berstatus "valid" (tanpa atribut status)
+          const ticketStatus = "valid";
+          const matchStatus = statusFilter === "all" || ticketStatus === statusFilter;
+          return matchSearch && matchStatus;
+      });
+    }, [visibleTickets, searchQuery, statusFilter]);
 
   return (
     <section className="space-y-6">
@@ -96,7 +99,7 @@ export function TicketListPage({
             {isCustomer ? "Tiket Saya" : "Manajemen Tiket"}
           </h1>
           <p className="mt-1 text-sm font-semibold text-slate-400">
-            {isCustomer ? "Daftar tiket yang Anda miliki" : "Kelola tiket untuk setiap acara"}
+            {isCustomer ? "Kelola dan akses tiket pertunjukan Anda" : "Kelola tiket: tambah, ubah status, dan hapus tiket"}
           </p>
         </div>
         {canCreate && (
@@ -113,8 +116,8 @@ export function TicketListPage({
 
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard label="TOTAL TIKET" value={String(visibleTickets.length)} />
-        <StatCard label="KATEGORI TERPAKAI" value={String(new Set(visibleTickets.map((t) => t.tcategoryId)).size)} />
-        <StatCard label="TOTAL ORDER" value={String(new Set(visibleTickets.map((t) => t.torderId)).size)} />
+        <StatCard label="VALID" value={String(visibleTickets.length)} />
+        <StatCard label="TERPAKAI" value="0" />
       </div>
 
       {/* Filters */}
@@ -124,7 +127,7 @@ export function TicketListPage({
           <input
             id="input-search-ticket"
             className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm font-semibold text-slate-700 shadow-sm outline-none placeholder:text-slate-300 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-            placeholder="Cari kode tiket atau event..."
+            placeholder="Cari kode tiket atau nama acara..."
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -132,15 +135,15 @@ export function TicketListPage({
         </div>
         <div className="relative">
           <select
-            id="select-event-filter"
+            id="select-status-filter"
             className="h-11 appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-4 pr-10 text-sm font-semibold text-slate-600 shadow-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-            value={eventFilter}
-            onChange={(e) => setEventFilter(e.target.value)}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="all">Semua Event</option>
-            {eventOptions.map((evt) => (
-              <option key={evt.eventId} value={evt.eventId}>{evt.title}</option>
-            ))}
+            <option value="all">Semua Status</option>
+            <option value="valid">Valid</option>
+            <option value="used">Used</option>
+            <option value="cancelled">Cancelled</option>
           </select>
           <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
         </div>
@@ -202,39 +205,69 @@ function TicketCard({ ticket, showCustomer, canEditDelete, onEdit, onDelete }: {
   const venueName = resolveVenueName(eventId);
   const customerName = order ? resolveCustomerName(order.customerId) : "-";
 
-    return (
-        <article className="rounded-xl border border-slate-100 bg-white px-6 py-5 shadow-[0_2px_10px_rgba(15,23,42,0.06)] transition hover:shadow-[0_4px_20px_rgba(15,23,42,0.10)]">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex items-start gap-4">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-500"><Ticket size={20} /></div>
-            <div className="min-w-0">
-                <h3 className="text-base font-extrabold text-slate-900">{ticket.ticketCode}</h3>
-                <p className="mt-0.5 flex items-center gap-1 text-sm font-semibold text-slate-400"><CalendarDays size={13} className="shrink-0" />{eventTitle}</p>
-                <div className="mt-3 flex flex-wrap gap-4">
-                <div><p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Kategori</p><span className="mt-1 inline-block rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-600">{cat?.categoryName ?? "-"}</span></div>
-                <div><p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Harga</p><p className="mt-1 text-sm font-extrabold text-emerald-600">{cat ? formatCurrency(cat.price) : "-"}</p></div>
-                <div><p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Venue</p><p className="mt-1 text-sm font-bold text-slate-500">{venueName}</p></div>
-                {showCustomer && (<div><p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Pelanggan</p><p className="mt-1 flex items-center gap-1 text-sm font-bold text-slate-500"><User size={13} /> {customerName}</p></div>)}
-                <div><p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Order</p><p className="mt-1 text-sm font-bold text-slate-500">{ticket.torderId}</p></div>
-                </div>
-                {canEditDelete && (
-                <div className="mt-4">
-                    <button className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-extrabold text-slate-600 shadow-sm transition hover:bg-slate-50 active:scale-[.97]" onClick={onEdit}>
-                    <Pencil size={13} /> Update
-                    </button>
-                    <button className="inline-flex items-center gap-1.5 rounded-lg border border-red-100 bg-white px-3.5 py-1.5 text-xs font-extrabold text-red-500 shadow-sm transition hover:bg-red-50 active:scale-[.97]" onClick={onDelete}>
-                        <Trash2 size={13} /> Hapus
-                    </button>
-                </div>
-                )}
-            </div>
-            </div>
-            <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-extrabold text-blue-600">{cat?.categoryName ?? "-"}</span>
+  return (
+    <article className="rounded-xl border border-slate-100 bg-white px-6 py-5 shadow-[0_2px_10px_rgba(15,23,42,0.06)] transition hover:shadow-[0_4px_20px_rgba(15,23,42,0.10)]">
+      <div className="flex items-start gap-4">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-500">
+          <Ticket size={20} />
         </div>
-        </article>
-    );
-}
 
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-emerald-600">Valid</span>
+            <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-blue-600">{cat?.categoryName ?? "-"}</span>
+          </div>
+
+          {/* Event title & ticket code */}
+          <h3 className="mt-1.5 text-base font-extrabold text-slate-900">{eventTitle}</h3>
+          <p className="mt-0.5 text-sm font-semibold text-slate-400">{ticket.ticketCode}</p>
+
+          {/* Info grid 2x3 */}
+          <div className="mt-4 grid grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-3">
+            <div>
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Jadwal</p>
+              <p className="mt-1 flex items-center gap-1 text-sm font-bold text-slate-600"><CalendarDays size={13} className="shrink-0" /> -</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Lokasi</p>
+              <p className="mt-1 flex items-center gap-1 text-sm font-bold text-slate-500"><MapPin size={13} className="shrink-0" /> {venueName}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Kursi</p>
+              <p className="mt-1 text-sm font-bold text-slate-500">-</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Harga</p>
+              <p className="mt-1 text-sm font-extrabold text-emerald-600">{cat ? formatCurrency(cat.price) : "-"}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Order</p>
+              <p className="mt-1 text-sm font-bold text-slate-500">{ticket.torderId}</p>
+            </div>
+            {showCustomer && (
+              <div>
+                <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Pelanggan</p>
+                <p className="mt-1 flex items-center gap-1 text-sm font-bold text-slate-500"><User size={13} /> {customerName}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Action buttons */}
+          {canEditDelete && (
+            <div className="mt-4 flex items-center gap-2">
+              <button className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-extrabold text-slate-600 shadow-sm transition hover:bg-slate-50 active:scale-[.97]" onClick={onEdit}>
+                <Pencil size={13} /> Update
+              </button>
+              <button className="inline-flex items-center gap-1.5 rounded-lg border border-red-100 bg-white px-3.5 py-1.5 text-xs font-extrabold text-red-500 shadow-sm transition hover:bg-red-50 active:scale-[.97]" onClick={onDelete}>
+                <Trash2 size={13} /> Hapus
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
 
 // Modal Backdrop 
 function ModalBackdrop({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
@@ -334,15 +367,26 @@ function AddTicketModal({
             <label className="mb-1.5 block text-xs font-extrabold uppercase tracking-wider text-slate-500">Kode Tiket</label>
             <input className={inputClass + " bg-slate-50 text-slate-300 cursor-not-allowed"} placeholder="Auto-generate saat dibuat" readOnly />
           </div>
-
-          {eventId && resolveVenueSeatingType(eventId) === "reserved" && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-700">
-              <Armchair size={14} className="mr-1 inline" />
-              Venue ini menggunakan reserved seating. Assign kursi tersedia setelah modul Seat diimplementasi.
-            </div>
-          )}
+          {eventId && resolveVenueSeatingType(eventId) === "reserved" && (() => {
+            const venueId = resolveVenueIdFromEvent(eventId);
+            const venueSeats = seatSeed.filter(s => s.venueId === venueId && !isSeatOccupied(s.seatId, hasRelationshipSeed));
+            return (
+              <div>
+                <label className="mb-1.5 block text-xs font-extrabold uppercase tracking-wider text-slate-400">
+                  Kursi <span className="normal-case font-semibold text-slate-300">(opsional — reserved seating)</span>
+                </label>
+                <select className={inputClass + " appearance-none"}>
+                  <option value="">Pilih Kursi</option>
+                  {venueSeats.map(s => (
+                    <option key={s.seatId} value={s.seatId}>
+                      {s.section} — Baris {s.rowNumber}, No. {s.seatNumber}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            );
+          })()}
         </div>
-
         <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
           <button type="button" className="h-10 rounded-full border border-slate-200 px-6 text-sm font-extrabold text-slate-600 shadow-sm transition hover:bg-slate-50 active:scale-[.97]" onClick={onClose}>Batal</button>
           <button type="submit" className="h-10 rounded-full bg-[#2563eb] px-6 text-sm font-extrabold text-white shadow-md transition hover:bg-[#1d4ed8] active:scale-[.97]">Buat Tiket</button>
@@ -354,10 +398,13 @@ function AddTicketModal({
 
 // Edit Ticket Modal
 function EditTicketModal({ ticket, onClose, onSubmit }: { ticket: TicketType; onClose: () => void; onSubmit: (u: TicketType) => void }) {
+  const [status, setStatus] = useState("valid");
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     onSubmit({ ...ticket });
   }
+
   return (
     <ModalBackdrop onClose={onClose}>
       <form onSubmit={handleSubmit}>
@@ -366,11 +413,49 @@ function EditTicketModal({ ticket, onClose, onSubmit }: { ticket: TicketType; on
           <button type="button" className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100" onClick={onClose}><X size={18} /></button>
         </div>
         <div className="space-y-5 px-6 py-6">
-          <div><label className="mb-1.5 block text-xs font-extrabold uppercase tracking-wider text-slate-500">Kode Tiket</label><input className={inputClass + " bg-slate-50 text-slate-400 cursor-not-allowed"} value={ticket.ticketCode} readOnly /></div>
+          <div>
+            <label className="mb-1.5 block text-xs font-extrabold uppercase tracking-wider text-slate-500">Kode Tiket</label>
+            <input className={inputClass + " bg-slate-50 text-slate-700 cursor-not-allowed"} value={ticket.ticketCode} readOnly />
+          </div>
+
+          {/* Status dropdown */}
+          <div>
+            <label className="mb-1.5 block text-xs font-extrabold uppercase tracking-wider text-slate-500">Status</label>
+            <select className={inputClass + " appearance-none"} value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="valid">Valid</option>
+              <option value="used">Used</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+
+          {(() => {
+            const order = resolveOrder(ticket.torderId);
+            const eventId = order?.eventId ?? "";
+            const venueId = resolveVenueIdFromEvent(eventId);
+            const venueSeats = seatSeed.filter(s => s.venueId === venueId);
+            return (
+              <div>
+                <label className="mb-1.5 block text-xs font-extrabold uppercase tracking-wider text-slate-400">
+                  Kursi <span className="normal-case font-semibold text-slate-300">(opsional)</span>
+                </label>
+                <select className={inputClass + " appearance-none"}>
+                  <option value="">Pilih Kursi</option>
+                  {venueSeats.map(s => {
+                    const occupied = isSeatOccupied(s.seatId, hasRelationshipSeed);
+                    return (
+                      <option key={s.seatId} value={s.seatId} disabled={occupied}>
+                        {s.section} — Baris {s.rowNumber}, No. {s.seatNumber}{occupied ? " (Terisi)" : ""}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            );
+          })()}
         </div>
         <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
           <button type="button" className="h-10 rounded-full border border-slate-200 px-6 text-sm font-extrabold text-slate-600 hover:bg-slate-50" onClick={onClose}>Batal</button>
-          <button type="submit" className="h-10 rounded-full bg-[#2563eb] px-6 text-sm font-extrabold text-white hover:bg-[#1d4ed8]">Simpan</button>
+          <button type="submit" className="inline-flex items-center gap-2 h-10 rounded-full bg-[#2563eb] px-6 text-sm font-extrabold text-white hover:bg-[#1d4ed8]">✓ Simpan</button>
         </div>
       </form>
     </ModalBackdrop>
