@@ -36,7 +36,11 @@ export function AuthApp() {
   const [screen, setScreen] = useState<AuthScreen>("login");
   const [activePage, setActivePage] = useState<AppPage>("dashboard");
   const [toast, setToast] = useState<ToastState>(null);
-  const [sessionUserId, setSessionUserId] = useState<string | null>(() => readInitialSession());
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSessionUserId(readInitialSession());
+  }, []);
 
   useEffect(() => {
     if (!toast) return;
