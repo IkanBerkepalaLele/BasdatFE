@@ -4,7 +4,7 @@ import { useMemo, useRef, useEffect, useState } from "react";
 import {
   ChevronDown, Plus, Search, 
   Ticket, X, Armchair, CalendarDays, 
-  User, Pencil, 
+  User, Pencil, Trash2,
 } from "lucide-react";
 import type { Ticket as TicketType } from "../data/ticket-seed";
 import {
@@ -38,6 +38,7 @@ export function TicketListPage({
   const [searchQuery, setSearchQuery] = useState("");
   const [eventFilter, setEventFilter] = useState("all");
   const [editTicket, setEditTicket] = useState<TicketType | null>(null);
+  const [deleteTicket, setDeleteTicket] = useState<TicketType | null>(null);
 
   function handleAdd(data: TicketType) {
     setTickets((c) => [data, ...c]);
@@ -47,6 +48,11 @@ export function TicketListPage({
   function handleEdit(updated: TicketType) {
     setTickets((c) => c.map((t) => (t.ticketId === updated.ticketId ? updated : t)));
     setEditTicket(null);
+  }
+
+  function handleDelete(ticketId: string) {
+    setTickets((c) => c.filter((t) => t.ticketId !== ticketId));
+    setDeleteTicket(null);
   }
 
     const visibleTickets = useMemo(() => {
@@ -148,7 +154,14 @@ export function TicketListPage({
           </div>
         )}
         {filteredTickets.map((ticket) => (
-          <TicketCard key={ticket.ticketId} ticket={ticket} showCustomer={!isCustomer} canEditDelete={canEditDelete} onEdit={() => setEditTicket(ticket)} />
+          <TicketCard
+            key={ticket.ticketId}
+            ticket={ticket}
+            showCustomer={!isCustomer}
+            canEditDelete={canEditDelete}
+            onEdit={() => setEditTicket(ticket)}
+            onDelete={() => setDeleteTicket(ticket)}
+          />
         ))}
       </div>
 
@@ -160,8 +173,13 @@ export function TicketListPage({
           onSubmit={handleAdd}
         />
       )}
-      {editTicket && <EditTicketModal ticket={editTicket} onClose={() => setEditTicket(null)} onSubmit={handleEdit} />}
-
+      {editTicket && <EditTicketModal 
+        ticket={editTicket} onClose={() => setEditTicket(null)} onSubmit={handleEdit} />
+      }
+      {deleteTicket && <DeleteTicketModal 
+        ticket={deleteTicket} onClose={() => setDeleteTicket(null)} onConfirm={() => 
+        handleDelete(deleteTicket.ticketId)} />
+      }
     </section>
   );
 }
@@ -176,7 +194,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function TicketCard({ ticket, showCustomer, canEditDelete, onEdit }: { ticket: TicketType; showCustomer: boolean; canEditDelete: boolean; onEdit: () => void }) {
+function TicketCard({ ticket, showCustomer, canEditDelete, onEdit, onDelete }: { ticket: TicketType; showCustomer: boolean; canEditDelete: boolean; onEdit: () => void; onDelete: () => void }) {
   const cat = resolveCategory(ticket.tcategoryId);
   const order = resolveOrder(ticket.torderId);
   const eventId = order?.eventId ?? "";
@@ -203,6 +221,9 @@ function TicketCard({ ticket, showCustomer, canEditDelete, onEdit }: { ticket: T
                 <div className="mt-4">
                     <button className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-extrabold text-slate-600 shadow-sm transition hover:bg-slate-50 active:scale-[.97]" onClick={onEdit}>
                     <Pencil size={13} /> Update
+                    </button>
+                    <button className="inline-flex items-center gap-1.5 rounded-lg border border-red-100 bg-white px-3.5 py-1.5 text-xs font-extrabold text-red-500 shadow-sm transition hover:bg-red-50 active:scale-[.97]" onClick={onDelete}>
+                        <Trash2 size={13} /> Hapus
                     </button>
                 </div>
                 )}
@@ -352,6 +373,29 @@ function EditTicketModal({ ticket, onClose, onSubmit }: { ticket: TicketType; on
           <button type="submit" className="h-10 rounded-full bg-[#2563eb] px-6 text-sm font-extrabold text-white hover:bg-[#1d4ed8]">Simpan</button>
         </div>
       </form>
+    </ModalBackdrop>
+  );
+}
+
+function DeleteTicketModal({ ticket, onClose, onConfirm }: { ticket: TicketType; onClose: () => void; onConfirm: () => void }) {
+  const cat = resolveCategory(ticket.tcategoryId);
+  const eventId = resolveEventIdFromOrder(ticket.torderId);
+  const eventTitle = eventId ? resolveEventTitle(eventId) : "-";
+  return (
+    <ModalBackdrop onClose={onClose}>
+      <div className="px-6 py-6">
+        <div className="flex items-start justify-between">
+          <h2 className="text-lg font-extrabold text-red-600">Hapus Tiket</h2>
+          <button type="button" className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100" onClick={onClose}><X size={16} /></button>
+        </div>
+        <p className="mt-3 text-sm font-semibold leading-relaxed text-slate-500">
+          Apakah Anda yakin ingin menghapus tiket ini? Relasi kursi akan dilepaskan. Tindakan ini tidak dapat dibatalkan.
+        </p>
+        <div className="mt-6 flex items-center justify-end gap-3">
+          <button type="button" className="h-10 rounded-lg border border-slate-200 px-5 text-sm font-extrabold text-slate-600 hover:bg-slate-50" onClick={onClose}>Batal</button>
+          <button type="button" className="h-10 rounded-lg bg-red-600 px-5 text-sm font-extrabold text-white hover:bg-red-700" onClick={onConfirm}>Hapus</button>
+        </div>
+      </div>
     </ModalBackdrop>
   );
 }
