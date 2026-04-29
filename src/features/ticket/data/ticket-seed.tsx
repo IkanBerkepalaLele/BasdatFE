@@ -102,12 +102,10 @@ export function resolveEventIdFromOrder(torderId: string): string | null {
   return order ? order.eventId : null;
 }
 
-/** Hitung berapa tiket sudah terpakai untuk suatu kategori */
 export function countUsedQuota(tcategoryId: string, tickets: Ticket[]): number {
   return tickets.filter((t) => t.tcategoryId === tcategoryId).length;
 }
 
-/** Generate ticket code otomatis */
 let nextTicketCounter = ticketSeed.length + 1;
 export function generateTicketCode(): string {
   const code = `TKT-AUTO-${String(nextTicketCounter).padStart(4, "0")}`;
@@ -118,6 +116,11 @@ export function generateTicketCode(): string {
 export function generateTicketId(): string {
   const id = `tkt-${String(nextTicketCounter).padStart(3, "0")}`;
   return id;
+}
+
+export function resolveVenueIdFromEvent(eventId: string): string | null {
+  const event = eventSeed.events.find((e: any) => e.eventId === eventId);
+  return event?.venueId ?? null;
 }
 
 export const ticketDummySummary = {
