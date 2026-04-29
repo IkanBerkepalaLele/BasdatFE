@@ -2,7 +2,9 @@
 
 import { useMemo, useRef, useEffect, useState } from "react";
 import {
-  ChevronDown, Plus, Search, Ticket, X, Armchair, CalendarDays, User,
+  ChevronDown, Plus, Search, 
+  Ticket, X, Armchair, CalendarDays, 
+  User, Pencil, 
 } from "lucide-react";
 import type { Ticket as TicketType } from "../data/ticket-seed";
 import {
@@ -30,14 +32,21 @@ export function TicketListPage({
 }) {
   const canCreate = role === "admin" || role === "organizer";
   const isCustomer = role === "customer";
+  const canEditDelete = role === "admin";
   const [tickets, setTickets] = useState<TicketType[]>(() => [...ticketSeed]);
   const [showAdd, setShowAdd] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [eventFilter, setEventFilter] = useState("all");
+  const [editTicket, setEditTicket] = useState<TicketType | null>(null);
 
   function handleAdd(data: TicketType) {
     setTickets((c) => [data, ...c]);
     setShowAdd(false);
+  }
+  
+  function handleEdit(updated: TicketType) {
+    setTickets((c) => c.map((t) => (t.ticketId === updated.ticketId ? updated : t)));
+    setEditTicket(null);
   }
 
     const visibleTickets = useMemo(() => {
@@ -139,7 +148,7 @@ export function TicketListPage({
           </div>
         )}
         {filteredTickets.map((ticket) => (
-          <TicketCard key={ticket.ticketId} ticket={ticket} showCustomer={!isCustomer} />
+          <TicketCard key={ticket.ticketId} ticket={ticket} showCustomer={!isCustomer} canEditDelete={canEditDelete} onEdit={() => setEditTicket(ticket)} />
         ))}
       </div>
 
@@ -151,6 +160,8 @@ export function TicketListPage({
           onSubmit={handleAdd}
         />
       )}
+      {editTicket && <EditTicketModal ticket={editTicket} onClose={() => setEditTicket(null)} onSubmit={handleEdit} />}
+
     </section>
   );
 }
@@ -165,7 +176,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function TicketCard({ ticket, showCustomer }: { ticket: TicketType; showCustomer: boolean }) {
+function TicketCard({ ticket, showCustomer, canEditDelete, onEdit }: { ticket: TicketType; showCustomer: boolean; canEditDelete: boolean; onEdit: () => void }) {
   const cat = resolveCategory(ticket.tcategoryId);
   const order = resolveOrder(ticket.torderId);
   const eventId = order?.eventId ?? "";
@@ -173,27 +184,34 @@ function TicketCard({ ticket, showCustomer }: { ticket: TicketType; showCustomer
   const venueName = resolveVenueName(eventId);
   const customerName = order ? resolveCustomerName(order.customerId) : "-";
 
-  return (
-    <article className="rounded-xl border border-slate-100 bg-white px-6 py-5 shadow-[0_2px_10px_rgba(15,23,42,0.06)] transition hover:shadow-[0_4px_20px_rgba(15,23,42,0.10)]">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-start gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-500"><Ticket size={20} /></div>
-          <div className="min-w-0">
-            <h3 className="text-base font-extrabold text-slate-900">{ticket.ticketCode}</h3>
-            <p className="mt-0.5 flex items-center gap-1 text-sm font-semibold text-slate-400"><CalendarDays size={13} className="shrink-0" />{eventTitle}</p>
-            <div className="mt-3 flex flex-wrap gap-4">
-              <div><p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Kategori</p><span className="mt-1 inline-block rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-600">{cat?.categoryName ?? "-"}</span></div>
-              <div><p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Harga</p><p className="mt-1 text-sm font-extrabold text-emerald-600">{cat ? formatCurrency(cat.price) : "-"}</p></div>
-              <div><p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Venue</p><p className="mt-1 text-sm font-bold text-slate-500">{venueName}</p></div>
-              {showCustomer && (<div><p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Pelanggan</p><p className="mt-1 flex items-center gap-1 text-sm font-bold text-slate-500"><User size={13} /> {customerName}</p></div>)}
-              <div><p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Order</p><p className="mt-1 text-sm font-bold text-slate-500">{ticket.torderId}</p></div>
+    return (
+        <article className="rounded-xl border border-slate-100 bg-white px-6 py-5 shadow-[0_2px_10px_rgba(15,23,42,0.06)] transition hover:shadow-[0_4px_20px_rgba(15,23,42,0.10)]">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-start gap-4">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-500"><Ticket size={20} /></div>
+            <div className="min-w-0">
+                <h3 className="text-base font-extrabold text-slate-900">{ticket.ticketCode}</h3>
+                <p className="mt-0.5 flex items-center gap-1 text-sm font-semibold text-slate-400"><CalendarDays size={13} className="shrink-0" />{eventTitle}</p>
+                <div className="mt-3 flex flex-wrap gap-4">
+                <div><p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Kategori</p><span className="mt-1 inline-block rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-600">{cat?.categoryName ?? "-"}</span></div>
+                <div><p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Harga</p><p className="mt-1 text-sm font-extrabold text-emerald-600">{cat ? formatCurrency(cat.price) : "-"}</p></div>
+                <div><p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Venue</p><p className="mt-1 text-sm font-bold text-slate-500">{venueName}</p></div>
+                {showCustomer && (<div><p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Pelanggan</p><p className="mt-1 flex items-center gap-1 text-sm font-bold text-slate-500"><User size={13} /> {customerName}</p></div>)}
+                <div><p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Order</p><p className="mt-1 text-sm font-bold text-slate-500">{ticket.torderId}</p></div>
+                </div>
+                {canEditDelete && (
+                <div className="mt-4">
+                    <button className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-extrabold text-slate-600 shadow-sm transition hover:bg-slate-50 active:scale-[.97]" onClick={onEdit}>
+                    <Pencil size={13} /> Update
+                    </button>
+                </div>
+                )}
             </div>
-          </div>
+            </div>
+            <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-extrabold text-blue-600">{cat?.categoryName ?? "-"}</span>
         </div>
-        <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-extrabold text-blue-600">{cat?.categoryName ?? "-"}</span>
-      </div>
-    </article>
-  );
+        </article>
+    );
 }
 
 
@@ -217,7 +235,6 @@ function ModalBackdrop({ children, onClose }: { children: React.ReactNode; onClo
 }
 
 // Add Ticket Modal 
-
 function AddTicketModal({
   existingTickets, onClose, onSubmit,
 }: {
@@ -308,6 +325,31 @@ function AddTicketModal({
         <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
           <button type="button" className="h-10 rounded-full border border-slate-200 px-6 text-sm font-extrabold text-slate-600 shadow-sm transition hover:bg-slate-50 active:scale-[.97]" onClick={onClose}>Batal</button>
           <button type="submit" className="h-10 rounded-full bg-[#2563eb] px-6 text-sm font-extrabold text-white shadow-md transition hover:bg-[#1d4ed8] active:scale-[.97]">Buat Tiket</button>
+        </div>
+      </form>
+    </ModalBackdrop>
+  );
+}
+
+// Edit Ticket Modal
+function EditTicketModal({ ticket, onClose, onSubmit }: { ticket: TicketType; onClose: () => void; onSubmit: (u: TicketType) => void }) {
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    onSubmit({ ...ticket });
+  }
+  return (
+    <ModalBackdrop onClose={onClose}>
+      <form onSubmit={handleSubmit}>
+        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+          <h2 className="text-lg font-extrabold text-slate-900">Update Tiket</h2>
+          <button type="button" className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100" onClick={onClose}><X size={18} /></button>
+        </div>
+        <div className="space-y-5 px-6 py-6">
+          <div><label className="mb-1.5 block text-xs font-extrabold uppercase tracking-wider text-slate-500">Kode Tiket</label><input className={inputClass + " bg-slate-50 text-slate-400 cursor-not-allowed"} value={ticket.ticketCode} readOnly /></div>
+        </div>
+        <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
+          <button type="button" className="h-10 rounded-full border border-slate-200 px-6 text-sm font-extrabold text-slate-600 hover:bg-slate-50" onClick={onClose}>Batal</button>
+          <button type="submit" className="h-10 rounded-full bg-[#2563eb] px-6 text-sm font-extrabold text-white hover:bg-[#1d4ed8]">Simpan</button>
         </div>
       </form>
     </ModalBackdrop>
