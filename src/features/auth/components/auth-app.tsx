@@ -6,6 +6,8 @@ import { DashboardPage } from "@/features/dashboard/components/dashboard-page";
 import { ProfilePage } from "@/features/profile/components/profile-page";
 import { VenueListPage } from "@/features/venue/components/venue-list-page";
 import { EventListPage } from "@/features/event/components/event-list-page";
+import { ArtistListPage } from "@/features/artist/components/artist-list-page";
+import { TicketCategoryListPage } from "@/features/ticket-category/components/ticket-category-list-page";
 import { TicketListPage } from "@/features/ticket/components/ticket-list-page";
 import { SeatListPage } from "@/features/seat/components/seat-list-page";
 import { roleLabels } from "../data/auth-seed";
@@ -21,8 +23,7 @@ import { LoginPage } from "./login-page";
 import { RegisterPage } from "./register-page";
 
 type AuthScreen = "login" | "register";
-type AppPage = "dashboard" | "profile" | "venue" | "event" | "ticket" | "seat";
-
+type AppPage = "dashboard" | "profile" | "venue" | "event" | "ticket" | "seat" | "artist" | "ticket-category";
 const sessionStorageKey = "tiktaktuk-auth-user-id";
 
 function readInitialSession() {
@@ -35,7 +36,11 @@ export function AuthApp() {
   const [screen, setScreen] = useState<AuthScreen>("login");
   const [activePage, setActivePage] = useState<AppPage>("dashboard");
   const [toast, setToast] = useState<ToastState>(null);
-  const [sessionUserId, setSessionUserId] = useState<string | null>(() => readInitialSession());
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSessionUserId(readInitialSession());
+  }, []);
 
   useEffect(() => {
     if (!toast) return;
@@ -207,7 +212,9 @@ export function AuthApp() {
       onLogout={logout}
       onProfile={() => setActivePage("profile")}
       onVenue={() => setActivePage("venue")}
+      onArtist={() => setActivePage("artist")}
       onEvent={() => setActivePage("event")}
+      onTicketCategory={() => setActivePage("ticket-category")}
       onTicket={() => setActivePage("ticket")}
       onSeat={() => setActivePage("seat")}
       onProfileUpdate={updateProfile}
@@ -221,7 +228,9 @@ export function AuthApp() {
 function AuthenticatedApp({
   activePage,
   data,
+  onArtist,
   onBlockedFeature,
+  onTicketCategory,
   onDashboard,
   onEvent,
   onLogout,
@@ -236,7 +245,9 @@ function AuthenticatedApp({
 }: {
   activePage: AppPage;
   data: AuthSeed;
+  onArtist: () => void;
   onBlockedFeature: (feature: string) => void;
+  onTicketCategory: () => void;
   onDashboard: () => void;
   onEvent: () => void;
   onLogout: () => void;
@@ -252,11 +263,13 @@ function AuthenticatedApp({
   return (
     <div className="min-h-screen bg-[#f7f8fb] text-slate-950">
       <AppNavbar
+        onArtist={onArtist}
         onDashboard={onDashboard}
         onEvent={onEvent}
         onFeatureBlocked={onBlockedFeature}
         onLogout={onLogout}
         onProfile={onProfile}
+        onTicketCategory={onTicketCategory}
         onVenue={onVenue}
         onTicket={onTicket}
         onSeat={onSeat}
@@ -282,6 +295,14 @@ function AuthenticatedApp({
                   : undefined
               }
             />
+          </div>
+        ) : activePage === "artist" ? (
+          <div className="mt-5">
+            <ArtistListPage role={user.role} />
+          </div>
+        ) : activePage === "ticket-category" ? (
+          <div className="mt-5">
+            <TicketCategoryListPage role={user.role} />
           </div>
         ) : activePage === "ticket" ? (
           <div className="mt-5">

@@ -11,6 +11,7 @@ const menuItems: Record<RoleName, string[]> = {
     "Dashboard",
     "Semua Event",
     "Manajemen Venue",
+    "Manajemen Artist",
     "Manajemen Kursi",
     "Kategori Tiket",
     "Manajemen Tiket",
@@ -23,6 +24,7 @@ const menuItems: Record<RoleName, string[]> = {
     "Dashboard",
     "Event Saya",
     "Manajemen Venue",
+    "Artis",
     "Manajemen Kursi",
     "Kategori Tiket",
     "Manajemen Tiket",
@@ -31,25 +33,29 @@ const menuItems: Record<RoleName, string[]> = {
     "Order (Aset)",
     "Profile",
   ],
-  customer: ["Dashboard", "Tiket Saya", "Pesanan", "Cari Event", "Promosi", "Venue", "Artis", "Logout"],
+  customer: ["Dashboard", "Tiket Saya", "Pesanan", "Cari Event", "Promosi", "Venue", "Artis", "Kategori Tiket", "Logout"],
 };
 
 export function AppNavbar({
+  onArtist,
   onDashboard,
   onEvent,
   onFeatureBlocked,
   onLogout,
   onProfile,
+  onTicketCategory,
   onVenue,
   onTicket,
   onSeat,
   role,
 }: {
+  onArtist: () => void;
   onDashboard: () => void;
   onEvent: () => void;
   onFeatureBlocked: (feature: string) => void;
   onLogout: () => void;
   onProfile: () => void;
+  onTicketCategory: () => void;
   onVenue: () => void;
   onTicket: () => void;
   onSeat: () => void;
@@ -63,6 +69,10 @@ export function AppNavbar({
       onDashboard();
     } else if (label === "Manajemen Venue" || label === "Venue") {
       onVenue();
+    } else if (label === "Manajemen Artist" || label === "Artis") {
+      onArtist();
+    } else if (label === "Kategori Tiket") {
+      onTicketCategory();
     } else if (label === "Event Saya" || label === "Cari Event" || label === "Semua Event") {
       onEvent();
     } else if (label === "Profile") {
@@ -90,8 +100,7 @@ export function AppNavbar({
         <nav className="hidden min-w-0 flex-1 items-center justify-start gap-1 overflow-x-auto px-2 lg:flex">
           {items.map((item) => {
             const active = item === "Dashboard" || item === "Semua Event";
-            const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Semua Event" || item === "Manajemen Tiket" || item === "Tiket Saya" || item === "Manajemen Kursi";
-
+            const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Semua Event" || item === "Manajemen Tiket" || item === "Tiket Saya" || item === "Manajemen Kursi" || item === "Manajemen Artist" || item === "Artis" || item === "Kategori Tiket";;
             return (
               <button
                 className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-bold transition ${
@@ -142,8 +151,7 @@ export function AppNavbar({
         <div className="border-t border-slate-200 bg-white px-4 py-3 lg:hidden">
           <div className="grid gap-2">
             {items.map((item) => {
-              const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Manajemen Tiket" || item === "Tiket Saya" || item === "Manajemen Kursi";
-              return (
+              const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Manajemen Tiket" || item === "Tiket Saya" || item === "Manajemen Kursi" || item === "Manajemen Artist" || item === "Artis" || item === "Kategori Tiket";              return (
                 <button
                   className={`rounded-lg px-3 py-3 text-left text-sm font-extrabold ${
                     clickable ? "bg-slate-50 text-slate-700" : "cursor-not-allowed bg-slate-50 text-slate-300"
