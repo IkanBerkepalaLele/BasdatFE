@@ -7,6 +7,7 @@ import { ProfilePage } from "@/features/profile/components/profile-page";
 import { VenueListPage } from "@/features/venue/components/venue-list-page";
 import { EventListPage } from "@/features/event/components/event-list-page";
 import { ArtistListPage } from "@/features/artist/components/artist-list-page";
+import { TicketCategoryListPage } from "@/features/ticket-category/components/ticket-category-list-page";
 import { roleLabels } from "../data/auth-seed";
 import {
   authenticate,
@@ -20,7 +21,7 @@ import { LoginPage } from "./login-page";
 import { RegisterPage } from "./register-page";
 
 type AuthScreen = "login" | "register";
-type AppPage = "dashboard" | "profile" | "venue" | "event" | "artist";
+type AppPage = "dashboard" | "profile" | "venue" | "event" | "artist" | "ticket-category";
 
 const sessionStorageKey = "tiktaktuk-auth-user-id";
 
@@ -208,6 +209,7 @@ export function AuthApp() {
       onVenue={() => setActivePage("venue")}
       onArtist={() => setActivePage("artist")}
       onEvent={() => setActivePage("event")}
+      onTicketCategory={() => setActivePage("ticket-category")}
       onProfileUpdate={updateProfile}
       onPasswordUpdate={updatePassword}
       toast={toast}
@@ -221,6 +223,7 @@ function AuthenticatedApp({
   data,
   onArtist,
   onBlockedFeature,
+  onTicketCategory,
   onDashboard,
   onEvent,
   onLogout,
@@ -235,6 +238,7 @@ function AuthenticatedApp({
   data: AuthSeed;
   onArtist: () => void;
   onBlockedFeature: (feature: string) => void;
+  onTicketCategory: () => void;
   onDashboard: () => void;
   onEvent: () => void;
   onLogout: () => void;
@@ -254,6 +258,7 @@ function AuthenticatedApp({
         onFeatureBlocked={onBlockedFeature}
         onLogout={onLogout}
         onProfile={onProfile}
+        onTicketCategory={onTicketCategory}
         onVenue={onVenue}
         role={user.role}
       />
@@ -281,6 +286,10 @@ function AuthenticatedApp({
         ) : activePage === "artist" ? (
           <div className="mt-5">
             <ArtistListPage role={user.role} />
+          </div>
+        ) : activePage === "ticket-category" ? (
+          <div className="mt-5">
+            <TicketCategoryListPage role={user.role} />
           </div>
         ) : (
           <div className="mt-5">

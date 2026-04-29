@@ -24,6 +24,7 @@ const menuItems: Record<RoleName, string[]> = {
     "Dashboard",
     "Event Saya",
     "Manajemen Venue",
+    "Artis",
     "Manajemen Kursi",
     "Kategori Tiket",
     "Manajemen Tiket",
@@ -32,7 +33,7 @@ const menuItems: Record<RoleName, string[]> = {
     "Order (Aset)",
     "Profile",
   ],
-  customer: ["Dashboard", "Tiket Saya", "Pesanan", "Cari Event", "Promosi", "Venue", "Artis", "Logout"],
+  customer: ["Dashboard", "Tiket Saya", "Pesanan", "Cari Event", "Promosi", "Venue", "Artis", "Kategori Tiket", "Logout"],
 };
 
 export function AppNavbar({
@@ -42,6 +43,7 @@ export function AppNavbar({
   onFeatureBlocked,
   onLogout,
   onProfile,
+  onTicketCategory,
   onVenue,
   role,
 }: {
@@ -51,6 +53,7 @@ export function AppNavbar({
   onFeatureBlocked: (feature: string) => void;
   onLogout: () => void;
   onProfile: () => void;
+  onTicketCategory: () => void;
   onVenue: () => void;
   role: RoleName;
 }) {
@@ -64,6 +67,8 @@ export function AppNavbar({
       onVenue();
     } else if (label === "Manajemen Artist" || label === "Artis") {
       onArtist();
+    } else if (label === "Kategori Tiket") {
+      onTicketCategory();
     } else if (label === "Event Saya" || label === "Cari Event" || label === "Semua Event") {
       onEvent();
     } else if (label === "Profile") {
@@ -85,7 +90,7 @@ export function AppNavbar({
         <nav className="hidden min-w-0 flex-1 items-center justify-start gap-1 overflow-x-auto px-2 lg:flex">
           {items.map((item) => {
             const active = item === "Dashboard" || item === "Semua Event";
-            const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Semua Event" || item === "Manajemen Artist" || item === "Artis";
+            const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Semua Event" || item === "Manajemen Artist" || item === "Artis" || item === "Kategori Tiket";
 
             return (
               <button
@@ -137,7 +142,7 @@ export function AppNavbar({
         <div className="border-t border-slate-200 bg-white px-4 py-3 lg:hidden">
           <div className="grid gap-2">
             {items.map((item) => {
-              const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Manajemen Artist" || item === "Artis";
+              const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Manajemen Artist" || item === "Artis" || item === "Kategori Tiket";
               return (
                 <button
                   className={`rounded-lg px-3 py-3 text-left text-sm font-extrabold ${

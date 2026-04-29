@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ChevronDown,
-  ChevronUp,
+  List,
   Music2,
   Pencil,
   Plus,
   Search,
+  Table2,
   Trash2,
   X,
 } from "lucide-react";
@@ -22,7 +22,43 @@ function generateArtistId(): string {
   return id;
 }
 
-type SortDir = "asc" | "desc";
+const avatarColors = [
+  "bg-blue-500",
+  "bg-violet-500",
+  "bg-rose-500",
+  "bg-emerald-500",
+  "bg-amber-500",
+  "bg-pink-500",
+  "bg-cyan-500",
+  "bg-indigo-500",
+  "bg-teal-500",
+  "bg-fuchsia-500",
+];
+
+const genreBadgeColors = [
+  "bg-blue-50 text-blue-600",
+  "bg-purple-50 text-purple-600",
+  "bg-rose-50 text-rose-600",
+  "bg-emerald-50 text-emerald-600",
+  "bg-amber-50 text-amber-600",
+  "bg-pink-50 text-pink-600",
+  "bg-cyan-50 text-cyan-600",
+  "bg-indigo-50 text-indigo-600",
+];
+
+function getAvatarColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return avatarColors[Math.abs(hash) % avatarColors.length];
+}
+
+function getGenreBadgeColor(genre: string): string {
+  let hash = 0;
+  for (let i = 0; i < genre.length; i++) hash = genre.charCodeAt(i) + ((hash << 5) - hash);
+  return genreBadgeColors[Math.abs(hash) % genreBadgeColors.length];
+}
+
+type ViewMode = "tabel" | "daftar";
 
 type ModalState =
   | { kind: "closed" }
@@ -34,14 +70,8 @@ export function ArtistListPage({ role }: { role: RoleName }) {
   const canManage = role === "admin";
   const [artists, setArtists] = useState<Artist[]>(() => [...artistSeed.artists]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [genreFilter, setGenreFilter] = useState("all");
   const [modal, setModal] = useState<ModalState>({ kind: "closed" });
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
-
-  const genres = useMemo(() => {
-    const unique = Array.from(new Set(artists.map((a) => a.genre).filter(Boolean)));
-    return unique.sort();
-  }, [artists]);
+  const [viewMode, setViewMode] = useState<ViewMode>("tabel");
 
   const filteredArtists = useMemo(() => {
     const filtered = artists.filter((artist) => {
@@ -49,18 +79,14 @@ export function ArtistListPage({ role }: { role: RoleName }) {
         searchQuery === "" ||
         artist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         artist.genre.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesGenre = genreFilter === "all" || artist.genre === genreFilter;
-      return matchesSearch && matchesGenre;
+      return matchesSearch;
     });
-
-    return filtered.sort((a, b) => {
-      const cmp = a.name.localeCompare(b.name, "id");
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-  }, [artists, searchQuery, genreFilter, sortDir]);
+    return filtered.sort((a, b) => a.name.localeCompare(b.name, "id"));
+  }, [artists, searchQuery]);
 
   const totalArtist = artists.length;
   const genreCount = new Set(artists.map((a) => a.genre).filter(Boolean)).size;
+  const tampilDiEvent = artists.length; // placeholder count
 
   function handleAdd(data: Omit<Artist, "artistId">) {
     const newArtist: Artist = { ...data, artistId: generateArtistId() };
@@ -82,11 +108,14 @@ export function ArtistListPage({ role }: { role: RoleName }) {
 
   return (
     <section className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900">Manajemen Artist</h1>
+          <h1 className="text-2xl font-extrabold text-slate-900">
+            {canManage ? "Manajemen Artist" : "Daftar Artis"}
+          </h1>
           <p className="mt-1 text-sm font-semibold text-slate-400">
-            Kelola data artis yang tampil pada event TikTakTuk
+            Kelola artis yang ada di platform TikTakTuk
           </p>
         </div>
         {canManage && (
@@ -101,155 +130,218 @@ export function ArtistListPage({ role }: { role: RoleName }) {
         )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <StatCard label="TOTAL ARTIST" value={String(totalArtist)} />
-        <StatCard label="TOTAL GENRE" value={String(genreCount)} />
+      {/* Stat Cards */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard label="TOTAL ARTIS" value={String(totalArtist)} />
+        <StatCard label="GENRE" value={String(genreCount)} />
+        <StatCard label="TAMPIL DI EVENT" value={String(tampilDiEvent)} />
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search
-            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300"
-            size={17}
-          />
-          <input
-            id="input-search-artist"
-            className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm font-semibold text-slate-700 shadow-sm outline-none placeholder:text-slate-300 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-            placeholder="Cari nama atau genre..."
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-
-        <div className="relative">
-          <select
-            id="select-genre-filter"
-            className="h-11 appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-4 pr-10 text-sm font-semibold text-slate-600 shadow-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-            value={genreFilter}
-            onChange={(e) => setGenreFilter(e.target.value)}
-          >
-            <option value="all">Semua Genre</option>
-            {genres.map((genre) => (
-              <option key={genre} value={genre}>
-                {genre}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
-            size={16}
-          />
-        </div>
-      </div>
-
-      {/* Table */}
+      {/* Table Card */}
       <div className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.06)]">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/60">
-                <th className="px-6 py-4 text-xs font-extrabold uppercase tracking-wider text-slate-400">
-                  No
-                </th>
-                <th className="px-6 py-4 text-xs font-extrabold uppercase tracking-wider text-slate-400">
-                  Artist ID
-                </th>
-                <th className="px-6 py-4">
-                  <button
-                    className="inline-flex items-center gap-1 text-xs font-extrabold uppercase tracking-wider text-slate-400 transition hover:text-slate-600"
-                    onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
-                  >
-                    Name
-                    {sortDir === "asc" ? (
-                      <ChevronUp size={14} />
-                    ) : (
-                      <ChevronDown size={14} />
-                    )}
-                  </button>
-                </th>
-                <th className="px-6 py-4 text-xs font-extrabold uppercase tracking-wider text-slate-400">
-                  Genre
-                </th>
-                {canManage && (
-                  <th className="px-6 py-4 text-right text-xs font-extrabold uppercase tracking-wider text-slate-400">
-                    Action
+        {/* Card Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+          <h2 className="text-lg font-extrabold text-slate-900">Tabel Artis</h2>
+          <div className="flex overflow-hidden rounded-lg border border-slate-200">
+            <button
+              id="btn-view-tabel"
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-extrabold transition ${
+                viewMode === "tabel"
+                  ? "bg-slate-900 text-white"
+                  : "bg-white text-slate-500 hover:bg-slate-50"
+              }`}
+              onClick={() => setViewMode("tabel")}
+            >
+              <Table2 size={13} />
+              Tabel
+            </button>
+            <button
+              id="btn-view-daftar"
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-extrabold transition ${
+                viewMode === "daftar"
+                  ? "bg-slate-900 text-white"
+                  : "bg-white text-slate-500 hover:bg-slate-50"
+              }`}
+              onClick={() => setViewMode("daftar")}
+            >
+              <List size={13} />
+              Daftar
+            </button>
+          </div>
+        </div>
+
+        {/* Search + Count */}
+        <div className="flex flex-col gap-3 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative flex-1 max-w-sm">
+            <Search
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300"
+              size={16}
+            />
+            <input
+              id="input-search-artist"
+              className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-4 text-sm font-semibold text-slate-700 shadow-sm outline-none placeholder:text-slate-300 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+              placeholder="Cari nama atau genre..."
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <p className="text-sm font-semibold text-slate-400">
+            {filteredArtists.length} artis ditemukan
+          </p>
+        </div>
+
+        {/* Tabel View */}
+        {viewMode === "tabel" ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-y border-slate-100 bg-slate-50/60">
+                  <th className="px-6 py-3 text-xs font-extrabold uppercase tracking-wider text-slate-400">
+                    Artis
                   </th>
-                )}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {filteredArtists.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={canManage ? 5 : 4}
-                    className="px-6 py-12 text-center text-sm font-bold text-slate-400"
-                  >
-                    Tidak ada artist yang ditemukan.
-                  </td>
+                  <th className="px-6 py-3 text-xs font-extrabold uppercase tracking-wider text-slate-400">
+                    Genre
+                  </th>
+                  {canManage && (
+                    <th className="px-6 py-3 text-right text-xs font-extrabold uppercase tracking-wider text-slate-400">
+                      Action
+                    </th>
+                  )}
+                  {!canManage && (
+                    <th className="w-12 px-6 py-3 text-right text-xs font-extrabold uppercase tracking-wider text-slate-400" />
+                  )}
                 </tr>
-              )}
-              {filteredArtists.map((artist, index) => (
-                <tr
-                  key={artist.artistId}
-                  className="transition hover:bg-slate-50/50"
-                >
-                  <td className="px-6 py-4 font-semibold text-slate-400">
-                    {index + 1}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500">
-                      {artist.artistId}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-500">
-                        <Music2 size={16} />
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {filteredArtists.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={3}
+                      className="px-6 py-12 text-center text-sm font-bold text-slate-400"
+                    >
+                      Tidak ada artist yang ditemukan.
+                    </td>
+                  </tr>
+                )}
+                {filteredArtists.map((artist) => (
+                  <tr
+                    key={artist.artistId}
+                    className="transition hover:bg-slate-50/50"
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${getAvatarColor(artist.name)}`}
+                        >
+                          {artist.name.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="font-extrabold text-slate-900">
+                          {artist.name}
+                        </span>
                       </div>
-                      <span className="font-extrabold text-slate-900">
-                        {artist.name}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
+                    </td>
+                    <td className="px-6 py-4">
+                      {artist.genre ? (
+                        <span
+                          className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider ${getGenreBadgeColor(artist.genre)}`}
+                        >
+                          {artist.genre}
+                        </span>
+                      ) : (
+                        <span className="text-xs font-semibold text-slate-300">—</span>
+                      )}
+                    </td>
+                    {canManage ? (
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            id={`btn-edit-${artist.artistId}`}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-extrabold text-slate-600 shadow-sm transition hover:bg-slate-50 active:scale-[.97]"
+                            onClick={() => setModal({ kind: "edit", artist })}
+                          >
+                            <Pencil size={13} />
+                            Update
+                          </button>
+                          <button
+                            id={`btn-hapus-${artist.artistId}`}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-red-100 bg-white px-3.5 py-1.5 text-xs font-extrabold text-red-500 shadow-sm transition hover:bg-red-50 active:scale-[.97]"
+                            onClick={() => setModal({ kind: "delete", artist })}
+                          >
+                            <Trash2 size={13} />
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    ) : (
+                      <td className="px-6 py-4 text-right text-slate-300">-</td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          /* Daftar (List) View */
+          <div className="divide-y divide-slate-50 px-6 pb-4">
+            {filteredArtists.length === 0 && (
+              <div className="py-12 text-center text-sm font-bold text-slate-400">
+                Tidak ada artist yang ditemukan.
+              </div>
+            )}
+            {filteredArtists.map((artist) => (
+              <div
+                key={artist.artistId}
+                className="flex items-center justify-between gap-4 py-4"
+              >
+                <div className="flex items-center gap-4">
+                  <div
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${getAvatarColor(artist.name)}`}
+                  >
+                    {artist.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-extrabold text-slate-900">{artist.name}</p>
                     {artist.genre ? (
-                      <span className="inline-flex items-center rounded-full bg-purple-50 px-3 py-1 text-xs font-extrabold text-purple-600">
+                      <span
+                        className={`mt-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${getGenreBadgeColor(artist.genre)}`}
+                      >
                         {artist.genre}
                       </span>
                     ) : (
-                      <span className="text-xs font-semibold text-slate-300">—</span>
+                      <p className="mt-0.5 text-xs font-semibold text-slate-300">
+                        Genre tidak tersedia
+                      </p>
                     )}
-                  </td>
-                  {canManage && (
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          id={`btn-edit-${artist.artistId}`}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-extrabold text-slate-600 shadow-sm transition hover:bg-slate-50 active:scale-[.97]"
-                          onClick={() => setModal({ kind: "edit", artist })}
-                        >
-                          <Pencil size={13} />
-                          Update
-                        </button>
-                        <button
-                          id={`btn-hapus-${artist.artistId}`}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-red-100 bg-white px-3.5 py-1.5 text-xs font-extrabold text-red-500 shadow-sm transition hover:bg-red-50 active:scale-[.97]"
-                          onClick={() => setModal({ kind: "delete", artist })}
-                        >
-                          <Trash2 size={13} />
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                </div>
+                {canManage && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      id={`btn-edit-list-${artist.artistId}`}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-extrabold text-slate-600 shadow-sm transition hover:bg-slate-50 active:scale-[.97]"
+                      onClick={() => setModal({ kind: "edit", artist })}
+                    >
+                      <Pencil size={13} />
+                      Update
+                    </button>
+                    <button
+                      id={`btn-hapus-list-${artist.artistId}`}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-red-100 bg-white px-3.5 py-1.5 text-xs font-extrabold text-red-500 shadow-sm transition hover:bg-red-50 active:scale-[.97]"
+                      onClick={() => setModal({ kind: "delete", artist })}
+                    >
+                      <Trash2 size={13} />
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
+      {/* Modals (admin only) */}
       {modal.kind === "add" && (
         <ArtistFormModal
           mode="add"
@@ -276,6 +368,7 @@ export function ArtistListPage({ role }: { role: RoleName }) {
   );
 }
 
+/* ── Stat Card ─────────────────────────────────────────────── */
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <article className="rounded-xl border border-slate-100 bg-white p-6 shadow-[0_2px_10px_rgba(15,23,42,0.06)]">
@@ -285,7 +378,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-
+/* ── Modal Backdrop ────────────────────────────────────────── */
 function ModalBackdrop({
   children,
   onClose,
@@ -313,9 +406,7 @@ function ModalBackdrop({
     >
       <div
         className="relative w-[min(95vw,480px)] animate-[modalIn_0.2s_ease-out] rounded-2xl bg-white shadow-2xl"
-        style={{
-          animation: "modalIn 0.2s ease-out",
-        }}
+        style={{ animation: "modalIn 0.2s ease-out" }}
       >
         {children}
       </div>
@@ -329,6 +420,7 @@ function ModalBackdrop({
   );
 }
 
+/* ── Artist Form Modal (Create / Edit) ─────────────────────── */
 type ArtistFormModalProps =
   | {
       mode: "add";
@@ -355,7 +447,6 @@ function ArtistFormModal(props: ArtistFormModalProps) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
     const trimmedName = name.trim();
     const trimmedGenre = genre.trim();
 
@@ -363,14 +454,9 @@ function ArtistFormModal(props: ArtistFormModalProps) {
       setNameError("Nama artis wajib diisi.");
       return;
     }
-
     setNameError("");
 
-    const data = {
-      name: trimmedName,
-      genre: trimmedGenre,
-    };
-
+    const data = { name: trimmedName, genre: trimmedGenre };
     if (isEdit) {
       props.onSubmitEdit({ ...data, artistId: props.artist.artistId });
     } else {
@@ -421,7 +507,6 @@ function ArtistFormModal(props: ArtistFormModalProps) {
               <p className="mt-1.5 text-xs font-semibold text-red-500">{nameError}</p>
             )}
           </div>
-
           <div>
             <label
               htmlFor="input-artist-genre"
@@ -462,6 +547,7 @@ function ArtistFormModal(props: ArtistFormModalProps) {
   );
 }
 
+/* ── Delete Artist Modal ───────────────────────────────────── */
 function DeleteArtistModal({
   artist,
   onClose,
@@ -485,11 +571,9 @@ function DeleteArtistModal({
             <X size={16} />
           </button>
         </div>
-
         <p className="mt-3 text-sm font-semibold leading-relaxed text-slate-500">
           Apakah Anda yakin ingin menghapus artis ini? Tindakan ini tidak dapat dibatalkan.
         </p>
-
         <div className="mt-4 rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-extrabold uppercase tracking-wider text-slate-400">Artist ID</span>
@@ -500,7 +584,6 @@ function DeleteArtistModal({
             <span className="text-sm font-bold text-slate-700">{artist.name}</span>
           </div>
         </div>
-
         <div className="mt-6 flex items-center justify-end gap-3">
           <button
             id="btn-batal-delete-artist"
