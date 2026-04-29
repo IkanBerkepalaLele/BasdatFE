@@ -303,7 +303,7 @@ function AddTicketModal({
 
         <div className="space-y-5 px-6 py-6">
           <div>
-            <label htmlFor="select-order" className="mb-1.5 block text-xs font-extrabold uppercase tracking-wider text-slate-500">Order (torder_id)</label>
+            <label htmlFor="select-order" className="mb-1.5 block text-xs font-extrabold uppercase tracking-wider text-slate-500">Order</label>
             <select id="select-order" className={inputClass + " appearance-none"} value={orderId} onChange={(e) => { setOrderId(e.target.value); setTcategoryId(""); }} required>
               <option value="" disabled>Pilih Order</option>
               {orderSeed.map((o) => (
@@ -315,7 +315,7 @@ function AddTicketModal({
           </div>
 
           <div>
-            <label htmlFor="select-category" className="mb-1.5 block text-xs font-extrabold uppercase tracking-wider text-slate-500">Kategori Tiket (tcategory_id)</label>
+            <label htmlFor="select-category" className="mb-1.5 block text-xs font-extrabold uppercase tracking-wider text-slate-500">Kategori Tiket</label>
             <select id="select-category" className={inputClass + " appearance-none"} value={tcategoryId} onChange={(e) => setTcategoryId(e.target.value)} required disabled={!eventId}>
               <option value="" disabled>Pilih Kategori</option>
               {availableCategories.map((cat) => {
@@ -331,8 +331,8 @@ function AddTicketModal({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-extrabold uppercase tracking-wider text-slate-500">Kode Tiket (auto-generated)</label>
-            <input className={inputClass + " bg-slate-50 text-slate-400 cursor-not-allowed"} value={ticketCode} readOnly />
+            <label className="mb-1.5 block text-xs font-extrabold uppercase tracking-wider text-slate-500">Kode Tiket</label>
+            <input className={inputClass + " bg-slate-50 text-slate-300 cursor-not-allowed"} placeholder="Auto-generate saat dibuat" readOnly />
           </div>
 
           {eventId && resolveVenueSeatingType(eventId) === "reserved" && (
