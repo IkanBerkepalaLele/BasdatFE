@@ -3,7 +3,7 @@
 import { useMemo, useRef, useEffect, useState } from "react";
 import { 
   Armchair, Plus, X, Building2,
-  ChevronDown, Search, Pencil,
+  ChevronDown, Search, Pencil, Trash2,
 } from "lucide-react";
 import type { Seat, HasRelationship } from "../data/seat-seed";
 import { 
@@ -20,10 +20,11 @@ export function SeatListPage({ role }: { role: RoleName }) {
   const canManage = role === "admin" || role === "organizer";
   const [seats, setSeats] = useState<Seat[]>(() => [...seatSeed]);
   const [showAdd, setShowAdd] = useState(false);
-  const [relationships] = useState<HasRelationship[]>(() => [...hasRelationshipSeed]);
+  const [relationships, setRelationships] = useState<HasRelationship[]>(() => [...hasRelationshipSeed]);
   const [searchQuery, setSearchQuery] = useState("");
   const [venueFilter, setVenueFilter] = useState("all");
   const [editSeat, setEditSeat] = useState<Seat | null>(null);
+  const [deleteSeat, setDeleteSeat] = useState<Seat | null>(null);
 
   function handleAdd(data: Seat) {
     setSeats((c) => [...c, data]);
@@ -33,6 +34,11 @@ export function SeatListPage({ role }: { role: RoleName }) {
   function handleEdit(updated: Seat) {
     setSeats((c) => c.map((s) => (s.seatId === updated.seatId ? updated : s)));
     setEditSeat(null);
+  }
+
+  function handleDelete(seatId: string) {
+    setSeats((c) => c.filter((s) => s.seatId != seatId));
+    setDeleteSeat(null);
   }
 
   const venueOptions = useMemo(() => {
@@ -129,6 +135,18 @@ export function SeatListPage({ role }: { role: RoleName }) {
                       <button className="lrounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" onClick={() => setEditSeat(seat)}>
                         <Pencil size={15} />
                       </button>
+                      {(() => {
+                        const occupied = isSeatOccupied(seat.seatId, relationships);
+                        return occupied ? (
+                          <button className="rounded-lg p-1.5 text-slate-200 cursor-not-allowed" disabled title="Kursi ini sudah di-assign ke tiket dan tidak dapat dihapus.">
+                            <Trash2 size={15} />
+                          </button>
+                        ) : (
+                          <button className="rounded-lg p-1.5 text-red-400 transition hover:bg-red-50 hover:text-red-600" onClick={() => setDeleteSeat(seat)}>
+                            <Trash2 size={15} />
+                          </button>
+                        );
+                      })()}
                     </td>
                   )}
                 </tr>
@@ -139,6 +157,7 @@ export function SeatListPage({ role }: { role: RoleName }) {
       </div>
       {showAdd && <SeatFormModal mode="add" onClose={() => setShowAdd(false)} onSubmit={handleAdd} />}
       {editSeat && <SeatFormModal mode="edit" seat={editSeat} onClose={() => setEditSeat(null)} onSubmitEdit={handleEdit} />}
+      {deleteSeat && <DeleteSeatModal seat={deleteSeat} onClose={() => setDeleteSeat(null)} onConfirm={() => handleDelete(deleteSeat.seatId)} />}
     </section>
   );
 }
@@ -229,6 +248,26 @@ function SeatFormModal(props: SeatFormProps) {
           <button type="submit" className="h-10 rounded-full bg-[#2563eb] px-6 text-sm font-extrabold text-white hover:bg-[#1d4ed8]">{isEdit ? "Simpan" : "Tambah"}</button>
         </div>
       </form>
+    </ModalBackdrop>
+  );
+}
+
+function DeleteSeatModal({ seat, onClose, onConfirm }: { seat: Seat; onClose: () => void; onConfirm: () => void }) {
+  return (
+    <ModalBackdrop onClose={onClose}>
+      <div className="px-6 py-6">
+        <div className="flex items-start justify-between">
+          <h2 className="text-lg font-extrabold text-red-600">Hapus Kursi</h2>
+          <button type="button" className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100" onClick={onClose}><X size={16} /></button>
+        </div>
+        <p className="mt-3 text-sm font-semibold leading-relaxed text-slate-500">
+          Apakah Anda yakin ingin menghapus kursi <span className="font-bold text-slate-700">{seat.section} — Baris {seat.rowNumber}, No. {seat.seatNumber}</span>?
+        </p>
+        <div className="mt-6 flex items-center justify-end gap-3">
+          <button type="button" className="h-10 rounded-lg border border-slate-200 px-5 text-sm font-extrabold text-slate-600 hover:bg-slate-50" onClick={onClose}>Batal</button>
+          <button type="button" className="h-10 rounded-lg bg-red-600 px-5 text-sm font-extrabold text-white hover:bg-red-700" onClick={onConfirm}>Hapus</button>
+        </div>
+      </div>
     </ModalBackdrop>
   );
 }
