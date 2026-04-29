@@ -11,6 +11,7 @@ const menuItems: Record<RoleName, string[]> = {
     "Dashboard",
     "Semua Event",
     "Manajemen Venue",
+    "Manajemen Artist",
     "Manajemen Kursi",
     "Kategori Tiket",
     "Manajemen Tiket",
@@ -35,6 +36,7 @@ const menuItems: Record<RoleName, string[]> = {
 };
 
 export function AppNavbar({
+  onArtist,
   onDashboard,
   onEvent,
   onFeatureBlocked,
@@ -43,6 +45,7 @@ export function AppNavbar({
   onVenue,
   role,
 }: {
+  onArtist: () => void;
   onDashboard: () => void;
   onEvent: () => void;
   onFeatureBlocked: (feature: string) => void;
@@ -59,6 +62,8 @@ export function AppNavbar({
       onDashboard();
     } else if (label === "Manajemen Venue" || label === "Venue") {
       onVenue();
+    } else if (label === "Manajemen Artist" || label === "Artis") {
+      onArtist();
     } else if (label === "Event Saya" || label === "Cari Event" || label === "Semua Event") {
       onEvent();
     } else if (label === "Profile") {
@@ -80,7 +85,7 @@ export function AppNavbar({
         <nav className="hidden min-w-0 flex-1 items-center justify-start gap-1 overflow-x-auto px-2 lg:flex">
           {items.map((item) => {
             const active = item === "Dashboard" || item === "Semua Event";
-            const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Semua Event" ;
+            const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Semua Event" || item === "Manajemen Artist" || item === "Artis";
 
             return (
               <button
@@ -132,7 +137,7 @@ export function AppNavbar({
         <div className="border-t border-slate-200 bg-white px-4 py-3 lg:hidden">
           <div className="grid gap-2">
             {items.map((item) => {
-              const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event";
+              const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Manajemen Artist" || item === "Artis";
               return (
                 <button
                   className={`rounded-lg px-3 py-3 text-left text-sm font-extrabold ${

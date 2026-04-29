@@ -6,6 +6,7 @@ import { DashboardPage } from "@/features/dashboard/components/dashboard-page";
 import { ProfilePage } from "@/features/profile/components/profile-page";
 import { VenueListPage } from "@/features/venue/components/venue-list-page";
 import { EventListPage } from "@/features/event/components/event-list-page";
+import { ArtistListPage } from "@/features/artist/components/artist-list-page";
 import { roleLabels } from "../data/auth-seed";
 import {
   authenticate,
@@ -19,7 +20,7 @@ import { LoginPage } from "./login-page";
 import { RegisterPage } from "./register-page";
 
 type AuthScreen = "login" | "register";
-type AppPage = "dashboard" | "profile" | "venue" | "event";
+type AppPage = "dashboard" | "profile" | "venue" | "event" | "artist";
 
 const sessionStorageKey = "tiktaktuk-auth-user-id";
 
@@ -205,6 +206,7 @@ export function AuthApp() {
       onLogout={logout}
       onProfile={() => setActivePage("profile")}
       onVenue={() => setActivePage("venue")}
+      onArtist={() => setActivePage("artist")}
       onEvent={() => setActivePage("event")}
       onProfileUpdate={updateProfile}
       onPasswordUpdate={updatePassword}
@@ -217,6 +219,7 @@ export function AuthApp() {
 function AuthenticatedApp({
   activePage,
   data,
+  onArtist,
   onBlockedFeature,
   onDashboard,
   onEvent,
@@ -230,6 +233,7 @@ function AuthenticatedApp({
 }: {
   activePage: AppPage;
   data: AuthSeed;
+  onArtist: () => void;
   onBlockedFeature: (feature: string) => void;
   onDashboard: () => void;
   onEvent: () => void;
@@ -244,6 +248,7 @@ function AuthenticatedApp({
   return (
     <div className="min-h-screen bg-[#f7f8fb] text-slate-950">
       <AppNavbar
+        onArtist={onArtist}
         onDashboard={onDashboard}
         onEvent={onEvent}
         onFeatureBlocked={onBlockedFeature}
@@ -272,6 +277,10 @@ function AuthenticatedApp({
                   : undefined
               }
             />
+          </div>
+        ) : activePage === "artist" ? (
+          <div className="mt-5">
+            <ArtistListPage role={user.role} />
           </div>
         ) : (
           <div className="mt-5">
