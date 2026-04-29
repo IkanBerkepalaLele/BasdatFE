@@ -8,6 +8,8 @@ import { VenueListPage } from "@/features/venue/components/venue-list-page";
 import { EventListPage } from "@/features/event/components/event-list-page";
 import { ArtistListPage } from "@/features/artist/components/artist-list-page";
 import { TicketCategoryListPage } from "@/features/ticket-category/components/ticket-category-list-page";
+import { TicketListPage } from "@/features/ticket/components/ticket-list-page";
+import { SeatListPage } from "@/features/seat/components/seat-list-page";
 import { roleLabels } from "../data/auth-seed";
 import {
   authenticate,
@@ -21,8 +23,7 @@ import { LoginPage } from "./login-page";
 import { RegisterPage } from "./register-page";
 
 type AuthScreen = "login" | "register";
-type AppPage = "dashboard" | "profile" | "venue" | "event" | "artist" | "ticket-category";
-
+type AppPage = "dashboard" | "profile" | "venue" | "event" | "ticket" | "seat" | "artist" | "ticket-category";
 const sessionStorageKey = "tiktaktuk-auth-user-id";
 
 function readInitialSession() {
@@ -210,6 +211,8 @@ export function AuthApp() {
       onArtist={() => setActivePage("artist")}
       onEvent={() => setActivePage("event")}
       onTicketCategory={() => setActivePage("ticket-category")}
+      onTicket={() => setActivePage("ticket")}
+      onSeat={() => setActivePage("seat")}
       onProfileUpdate={updateProfile}
       onPasswordUpdate={updatePassword}
       toast={toast}
@@ -231,6 +234,8 @@ function AuthenticatedApp({
   onProfile,
   onVenue,
   onProfileUpdate,
+  onTicket,
+  onSeat,
   toast,
   user,
 }: {
@@ -245,6 +250,8 @@ function AuthenticatedApp({
   onPasswordUpdate: (oldPassword: string, newPassword: string, confirmation: string) => void;
   onProfile: () => void;
   onVenue: () => void;
+  onTicket: () => void;
+  onSeat: () => void;
   onProfileUpdate: (payload: ProfileUpdatePayload) => void;
   toast: ToastState;
   user: SessionUser;
@@ -260,6 +267,8 @@ function AuthenticatedApp({
         onProfile={onProfile}
         onTicketCategory={onTicketCategory}
         onVenue={onVenue}
+        onTicket={onTicket}
+        onSeat={onSeat}
         role={user.role}
       />
       <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -291,6 +300,19 @@ function AuthenticatedApp({
           <div className="mt-5">
             <TicketCategoryListPage role={user.role} />
           </div>
+        ) : activePage === "ticket" ? (
+          <div className="mt-5">
+            <TicketListPage
+              role={user.role}
+              customerId={
+                user.role === "customer"
+                  ? data.customers.find((c) => c.userId === user.userId)?.customerId
+                  : undefined
+              }
+            />
+          </div>
+        )  : activePage === "seat" ? (
+          <div className="mt-5"><SeatListPage role={user.role} /></div>
         ) : (
           <div className="mt-5">
             <ProfilePage
