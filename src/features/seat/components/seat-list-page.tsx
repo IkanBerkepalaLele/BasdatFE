@@ -1,9 +1,15 @@
 "use client";
 
 import { useMemo, useRef, useEffect, useState } from "react";
-import { Armchair, Plus, X, Building2 } from "lucide-react";
-import type { Seat } from "../data/seat-seed";
-import { seatSeed, resolveVenueName, generateSeatId } from "../data/seat-seed";
+import { 
+  Armchair, Plus, X, Building2,
+  ChevronDown, Search,
+} from "lucide-react";
+import type { Seat, HasRelationship } from "../data/seat-seed";
+import { 
+  seatSeed, resolveVenueName, generateSeatId, 
+  hasRelationshipSeed, isSeatOccupied 
+} from "../data/seat-seed";
 import { venueSeed } from "@/features/venue/data/venue-seed";
 import type { RoleName } from "@/features/auth/types";
 
@@ -14,11 +20,34 @@ export function SeatListPage({ role }: { role: RoleName }) {
   const canManage = role === "admin" || role === "organizer";
   const [seats, setSeats] = useState<Seat[]>(() => [...seatSeed]);
   const [showAdd, setShowAdd] = useState(false);
+  const [relationships] = useState<HasRelationship[]>(() => [...hasRelationshipSeed]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [venueFilter, setVenueFilter] = useState("all");
 
   function handleAdd(data: Seat) {
     setSeats((c) => [...c, data]);
     setShowAdd(false);
   }
+
+  const venueOptions = useMemo(() => {
+    const ids = Array.from(new Set(seats.map((s) => s.venueId)));
+    return ids.map((id) => ({ venueId: id, name: resolveVenueName(id) })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [seats]);
+
+  const filteredSeats = useMemo(() => {
+    return seats.filter((s) => {
+      const matchSearch =  searchQuery === "" ||
+        s.section.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.rowNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.seatNumber.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchVenue = venueFilter === "all" || s.venueId === venueFilter;
+      return matchSearch && matchVenue;
+    });
+  }, [seats, searchQuery, venueFilter]);
+
+  const totalSeats = seats.length;
+  const occupiedCount = seats.filter((s) => isSeatOccupied(s.seatId, relationships)).length;
+  const availableCount = totalSeats - occupiedCount;
 
   return (
     <section className="space-y-6">
@@ -33,6 +62,25 @@ export function SeatListPage({ role }: { role: RoleName }) {
           </button>
         )}
       </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard label="TOTAL KURSI" value={String(totalSeats)} />
+        <StatCard label="TERSEDIA" value={String(availableCount)} />
+        <StatCard label="TERISI" value={String(occupiedCount)} />
+      </div>
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" size={17} />
+          <input id="input-search-seat" className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm font-semibold text-slate-700 shadow-sm outline-none placeholder:text-slate-300 focus:border-blue-400 focus:ring-2 focus:ring-blue-100" placeholder="Cari section, baris, atau nomor..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+        </div>
+        <div className="relative">
+          <select id="select-venue-filter" className="h-11 appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-4 pr-10 text-sm font-semibold text-slate-600 shadow-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100" value={venueFilter} onChange={(e) => setVenueFilter(e.target.value)}>
+            <option value="all">Semua Venue</option>
+            {venueOptions.map((v) => (<option key={v.venueId} value={v.venueId}>{v.name}</option>))}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+        </div>
+      </div>
 
       {/* Simple table */}
       <div className="overflow-x-auto rounded-xl border border-slate-100 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.06)]">
@@ -43,31 +91,50 @@ export function SeatListPage({ role }: { role: RoleName }) {
               <th className="px-4 py-4 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Baris</th>
               <th className="px-4 py-4 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">No. Kursi</th>
               <th className="px-4 py-4 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Venue</th>
+              <th className="px-4 py-4 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Status</th>
             </tr>
           </thead>
           <tbody>
-            {seats.length === 0 && (
-              <tr><td colSpan={4} className="px-6 py-12 text-center text-sm font-bold text-slate-400">Tidak ada kursi.</td></tr>
+                        {filteredSeats.length === 0 && (
+              <tr><td colSpan={5} className="px-6 py-12 text-center text-sm font-bold text-slate-400">Tidak ada kursi yang ditemukan.</td></tr>
             )}
-            {seats.map((seat) => (
-              <tr key={seat.seatId} className="border-b border-slate-50 transition hover:bg-slate-50/50">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <Armchair size={16} className="text-blue-500" />
-                    <span className="font-extrabold text-slate-900">{seat.section}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-4 font-bold text-slate-600">{seat.rowNumber}</td>
-                <td className="px-4 py-4"><span className="rounded-md bg-slate-100 px-2.5 py-1 font-extrabold text-slate-700">{seat.seatNumber}</span></td>
-                <td className="px-4 py-4"><span className="flex items-center gap-1.5 font-semibold text-slate-500"><Building2 size={14} />{resolveVenueName(seat.venueId)}</span></td>
-              </tr>
-            ))}
+            {filteredSeats.map((seat) => {
+              const occupied = isSeatOccupied(seat.seatId, relationships);
+              return (
+                <tr key={seat.seatId} className="border-b border-slate-50 transition hover:bg-slate-50/50">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <Armchair size={16} className="text-blue-500" />
+                      <span className="font-extrabold text-slate-900">{seat.section}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4 font-bold text-slate-600">{seat.rowNumber}</td>
+                  <td className="px-4 py-4"><span className="rounded-md bg-slate-100 px-2.5 py-1 font-extrabold text-slate-700">{seat.seatNumber}</span></td>
+                  <td className="px-4 py-4"><span className="flex items-center gap-1.5 font-semibold text-slate-500"><Building2 size={14} />{resolveVenueName(seat.venueId)}</span></td>
+                  <td className="px-4 py-4">
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-extrabold ${occupied ? "bg-red-50 text-red-500" : "bg-emerald-50 text-emerald-600"}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${occupied ? "bg-red-500" : "bg-emerald-500"}`} />
+                      {occupied ? "TERISI" : "TERSEDIA"}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
       {showAdd && <SeatFormModal mode="add" onClose={() => setShowAdd(false)} onSubmit={handleAdd} />}
     </section>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <article className="rounded-xl border border-slate-100 bg-white p-6 shadow-[0_2px_10px_rgba(15,23,42,0.06)]">
+      <p className="text-xs font-extrabold tracking-wider text-slate-300">{label}</p>
+      <p className="mt-3 text-3xl font-extrabold text-slate-900">{value}</p>
+    </article>
   );
 }
 
