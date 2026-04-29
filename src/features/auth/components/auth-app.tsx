@@ -6,6 +6,8 @@ import { DashboardPage } from "@/features/dashboard/components/dashboard-page";
 import { ProfilePage } from "@/features/profile/components/profile-page";
 import { VenueListPage } from "@/features/venue/components/venue-list-page";
 import { EventListPage } from "@/features/event/components/event-list-page";
+import { TicketListPage } from "@/features/ticket/components/ticket-list-page";
+import { SeatListPage } from "@/features/seat/components/seat-list-page";
 import { roleLabels } from "../data/auth-seed";
 import {
   authenticate,
@@ -19,7 +21,7 @@ import { LoginPage } from "./login-page";
 import { RegisterPage } from "./register-page";
 
 type AuthScreen = "login" | "register";
-type AppPage = "dashboard" | "profile" | "venue" | "event";
+type AppPage = "dashboard" | "profile" | "venue" | "event" | "ticket" | "seat";
 
 const sessionStorageKey = "tiktaktuk-auth-user-id";
 
@@ -206,6 +208,8 @@ export function AuthApp() {
       onProfile={() => setActivePage("profile")}
       onVenue={() => setActivePage("venue")}
       onEvent={() => setActivePage("event")}
+      onTicket={() => setActivePage("ticket")}
+      onSeat={() => setActivePage("seat")}
       onProfileUpdate={updateProfile}
       onPasswordUpdate={updatePassword}
       toast={toast}
@@ -225,6 +229,8 @@ function AuthenticatedApp({
   onProfile,
   onVenue,
   onProfileUpdate,
+  onTicket,
+  onSeat,
   toast,
   user,
 }: {
@@ -237,6 +243,8 @@ function AuthenticatedApp({
   onPasswordUpdate: (oldPassword: string, newPassword: string, confirmation: string) => void;
   onProfile: () => void;
   onVenue: () => void;
+  onTicket: () => void;
+  onSeat: () => void;
   onProfileUpdate: (payload: ProfileUpdatePayload) => void;
   toast: ToastState;
   user: SessionUser;
@@ -250,6 +258,8 @@ function AuthenticatedApp({
         onLogout={onLogout}
         onProfile={onProfile}
         onVenue={onVenue}
+        onTicket={onTicket}
+        onSeat={onSeat}
         role={user.role}
       />
       <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -273,6 +283,19 @@ function AuthenticatedApp({
               }
             />
           </div>
+        ) : activePage === "ticket" ? (
+          <div className="mt-5">
+            <TicketListPage
+              role={user.role}
+              customerId={
+                user.role === "customer"
+                  ? data.customers.find((c) => c.userId === user.userId)?.customerId
+                  : undefined
+              }
+            />
+          </div>
+        )  : activePage === "seat" ? (
+          <div className="mt-5"><SeatListPage role={user.role} /></div>
         ) : (
           <div className="mt-5">
             <ProfilePage
