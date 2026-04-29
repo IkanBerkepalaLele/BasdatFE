@@ -42,6 +42,7 @@ export function AppNavbar({
   onProfile,
   onVenue,
   onTicket,
+  onSeat,
   role,
 }: {
   onDashboard: () => void;
@@ -51,6 +52,7 @@ export function AppNavbar({
   onProfile: () => void;
   onVenue: () => void;
   onTicket: () => void;
+  onSeat: () => void;
   role: RoleName;
 }) {
   const [open, setOpen] = useState(false);
@@ -71,6 +73,8 @@ export function AppNavbar({
       onTicket();
     } else if (label === "Tiket Saya") {
       onTicket(); 
+    } else if (label === "Manajemen Kursi") {
+      onSeat(); 
     } else {
       onFeatureBlocked(label);
     }
@@ -86,7 +90,7 @@ export function AppNavbar({
         <nav className="hidden min-w-0 flex-1 items-center justify-start gap-1 overflow-x-auto px-2 lg:flex">
           {items.map((item) => {
             const active = item === "Dashboard" || item === "Semua Event";
-            const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Semua Event" || item === "Manajemen Tiket" || item === "Tiket Saya";
+            const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Semua Event" || item === "Manajemen Tiket" || item === "Tiket Saya" || item === "Manajemen Kursi";
 
             return (
               <button
@@ -138,7 +142,7 @@ export function AppNavbar({
         <div className="border-t border-slate-200 bg-white px-4 py-3 lg:hidden">
           <div className="grid gap-2">
             {items.map((item) => {
-              const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Manajemen Tiket" || item === "Tiket Saya";
+              const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Manajemen Tiket" || item === "Tiket Saya" || item === "Manajemen Kursi";
               return (
                 <button
                   className={`rounded-lg px-3 py-3 text-left text-sm font-extrabold ${

@@ -7,6 +7,7 @@ import { ProfilePage } from "@/features/profile/components/profile-page";
 import { VenueListPage } from "@/features/venue/components/venue-list-page";
 import { EventListPage } from "@/features/event/components/event-list-page";
 import { TicketListPage } from "@/features/ticket/components/ticket-list-page";
+import { SeatListPage } from "@/features/seat/components/seat-list-page";
 import { roleLabels } from "../data/auth-seed";
 import {
   authenticate,
@@ -20,7 +21,7 @@ import { LoginPage } from "./login-page";
 import { RegisterPage } from "./register-page";
 
 type AuthScreen = "login" | "register";
-type AppPage = "dashboard" | "profile" | "venue" | "event" | "ticket";
+type AppPage = "dashboard" | "profile" | "venue" | "event" | "ticket" | "seat";
 
 const sessionStorageKey = "tiktaktuk-auth-user-id";
 
@@ -208,6 +209,7 @@ export function AuthApp() {
       onVenue={() => setActivePage("venue")}
       onEvent={() => setActivePage("event")}
       onTicket={() => setActivePage("ticket")}
+      onSeat={() => setActivePage("seat")}
       onProfileUpdate={updateProfile}
       onPasswordUpdate={updatePassword}
       toast={toast}
@@ -228,6 +230,7 @@ function AuthenticatedApp({
   onVenue,
   onProfileUpdate,
   onTicket,
+  onSeat,
   toast,
   user,
 }: {
@@ -241,6 +244,7 @@ function AuthenticatedApp({
   onProfile: () => void;
   onVenue: () => void;
   onTicket: () => void;
+  onSeat: () => void;
   onProfileUpdate: (payload: ProfileUpdatePayload) => void;
   toast: ToastState;
   user: SessionUser;
@@ -255,6 +259,7 @@ function AuthenticatedApp({
         onProfile={onProfile}
         onVenue={onVenue}
         onTicket={onTicket}
+        onSeat={onSeat}
         role={user.role}
       />
       <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -289,6 +294,8 @@ function AuthenticatedApp({
               }
             />
           </div>
+        )  : activePage === "seat" ? (
+          <div className="mt-5"><SeatListPage role={user.role} /></div>
         ) : (
           <div className="mt-5">
             <ProfilePage
