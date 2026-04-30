@@ -323,6 +323,7 @@ function AuthenticatedApp({
   return (
     <div className="min-h-screen bg-[#f7f8fb] text-slate-950">
       <AppNavbar
+        activePage={activePage}
         onArtist={onArtist}
         onDashboard={onDashboard}
         onEvent={onEvent}
