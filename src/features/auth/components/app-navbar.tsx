@@ -47,8 +47,9 @@ export function AppNavbar({
   onVenue,
   onTicket,
   onSeat,
+  onOrder,
   role,
-}: {
+  }: {
   onArtist: () => void;
   onDashboard: () => void;
   onEvent: () => void;
@@ -59,8 +60,9 @@ export function AppNavbar({
   onVenue: () => void;
   onTicket: () => void;
   onSeat: () => void;
+  onOrder: () => void;
   role: RoleName;
-}) {
+  }) {
   const [open, setOpen] = useState(false);
   const items = menuItems[role];
 
@@ -85,6 +87,8 @@ export function AppNavbar({
       onTicket(); 
     } else if (label === "Manajemen Kursi") {
       onSeat(); 
+    } else if (label === "Semua Order" || label === "Pesanan") {
+      onOrder();
     } else {
       onFeatureBlocked(label);
     }
@@ -100,7 +104,8 @@ export function AppNavbar({
         <nav className="hidden min-w-0 flex-1 items-center justify-start gap-1 overflow-x-auto px-2 lg:flex">
           {items.map((item) => {
             const active = item === "Dashboard" || item === "Semua Event";
-            const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Semua Event" || item === "Manajemen Tiket" || item === "Tiket Saya" || item === "Manajemen Kursi" || item === "Manajemen Artist" || item === "Artis" || item === "Kategori Tiket";;
+            const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Semua Event" || item === "Manajemen Tiket" || item === "Tiket Saya" || item === "Manajemen Kursi" || item === "Manajemen Artist" || item === "Artis" || item === "Kategori Tiket" || item === "Semua Order" || item === "Pesanan";
+
             return (
               <button
                 className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-bold transition ${
@@ -151,7 +156,7 @@ export function AppNavbar({
         <div className="border-t border-slate-200 bg-white px-4 py-3 lg:hidden">
           <div className="grid gap-2">
             {items.map((item) => {
-              const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Manajemen Tiket" || item === "Tiket Saya" || item === "Manajemen Kursi" || item === "Manajemen Artist" || item === "Artis" || item === "Kategori Tiket";              return (
+              const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Semua Event" || item === "Manajemen Tiket" || item === "Tiket Saya" || item === "Manajemen Kursi" || item === "Manajemen Artist" || item === "Artis" || item === "Kategori Tiket" || item === "Semua Order" || item === "Pesanan";              return (
                 <button
                   className={`rounded-lg px-3 py-3 text-left text-sm font-extrabold ${
                     clickable ? "bg-slate-50 text-slate-700" : "cursor-not-allowed bg-slate-50 text-slate-300"

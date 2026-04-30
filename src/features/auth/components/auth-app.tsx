@@ -10,6 +10,8 @@ import { ArtistListPage } from "@/features/artist/components/artist-list-page";
 import { TicketCategoryListPage } from "@/features/ticket-category/components/ticket-category-list-page";
 import { TicketListPage } from "@/features/ticket/components/ticket-list-page";
 import { SeatListPage } from "@/features/seat/components/seat-list-page";
+import { OrderListPage } from "@/features/order/components/order-list-page";
+import { CheckoutPage } from "@/features/order/components/checkout-page";
 import { roleLabels } from "../data/auth-seed";
 import {
   authenticate,
@@ -23,7 +25,7 @@ import { LoginPage } from "./login-page";
 import { RegisterPage } from "./register-page";
 
 type AuthScreen = "login" | "register";
-type AppPage = "dashboard" | "profile" | "venue" | "event" | "ticket" | "seat" | "artist" | "ticket-category";
+type AppPage = "dashboard" | "profile" | "venue" | "event" | "ticket" | "seat" | "artist" | "ticket-category" | "order" | "checkout";
 const sessionStorageKey = "tiktaktuk-auth-user-id";
 
 function readInitialSession() {
@@ -37,6 +39,7 @@ export function AuthApp() {
   const [activePage, setActivePage] = useState<AppPage>("dashboard");
   const [toast, setToast] = useState<ToastState>(null);
   const [sessionUserId, setSessionUserId] = useState<string | null>(null);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
   useEffect(() => {
     setSessionUserId(readInitialSession());
@@ -217,8 +220,14 @@ export function AuthApp() {
       onTicketCategory={() => setActivePage("ticket-category")}
       onTicket={() => setActivePage("ticket")}
       onSeat={() => setActivePage("seat")}
+      onOrder={() => setActivePage("order")}
+      onCheckout={(eventId) => {
+        setSelectedEventId(eventId);
+        setActivePage("checkout");
+      }}
       onProfileUpdate={updateProfile}
       onPasswordUpdate={updatePassword}
+      selectedEventId={selectedEventId}
       toast={toast}
       user={currentUser}
     />
@@ -240,6 +249,9 @@ function AuthenticatedApp({
   onProfileUpdate,
   onTicket,
   onSeat,
+  onOrder,
+  onCheckout,
+  selectedEventId,
   toast,
   user,
 }: {
@@ -256,7 +268,10 @@ function AuthenticatedApp({
   onVenue: () => void;
   onTicket: () => void;
   onSeat: () => void;
+  onOrder: () => void;
+  onCheckout: (eventId: string) => void;
   onProfileUpdate: (payload: ProfileUpdatePayload) => void;
+  selectedEventId: string | null;
   toast: ToastState;
   user: SessionUser;
 }) {
@@ -273,6 +288,7 @@ function AuthenticatedApp({
         onVenue={onVenue}
         onTicket={onTicket}
         onSeat={onSeat}
+        onOrder={onOrder}
         role={user.role}
       />
       <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -288,6 +304,7 @@ function AuthenticatedApp({
         ) : activePage === "event" ? (
           <div className="mt-5">
             <EventListPage
+              onCheckout={onCheckout}
               role={user.role}
               organizerId={
                 user.role === "organizer"
@@ -317,6 +334,34 @@ function AuthenticatedApp({
           </div>
         )  : activePage === "seat" ? (
           <div className="mt-5"><SeatListPage role={user.role} /></div>
+        ) : activePage === "order" ? (
+          <div className="mt-5">
+            <OrderListPage
+              role={user.role}
+              customerId={
+                user.role === "customer"
+                  ? data.customers.find((c) => c.userId === user.userId)?.customerId
+                  : undefined
+              }
+              organizerId={
+                user.role === "organizer"
+                  ? data.organizers.find((o) => o.userId === user.userId)?.organizerId
+                  : undefined
+              }
+            />
+          </div>
+        ) : activePage === "checkout" ? (
+          <div className="mt-5">
+            {selectedEventId && (
+              <CheckoutPage
+                eventId={selectedEventId}
+                customerId={data.customers.find((c) => c.userId === user.userId)?.customerId || ""}
+                onSuccess={() => {
+                   onOrder();
+                }}
+              />
+            )}
+          </div>
         ) : (
           <div className="mt-5">
             <ProfilePage

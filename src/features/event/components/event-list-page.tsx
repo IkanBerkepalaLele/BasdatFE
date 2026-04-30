@@ -60,7 +60,7 @@ const iconMap = {
   sparkles: Sparkles,
 } as const;
 
-export function EventListPage({ role, organizerId }: { role: RoleName; organizerId?: string }) {
+export function EventListPage({ role, organizerId, onCheckout }: { role: RoleName; organizerId?: string; onCheckout?: (eventId: string) => void }) {
   const [events, setEvents] = useState<Event[]>(() => {
     if (role === "organizer" && organizerId) {
       return eventSeed.events.filter((e) => e.organizerId === organizerId);
@@ -213,6 +213,7 @@ export function EventListPage({ role, organizerId }: { role: RoleName; organizer
               onToggleFavorite={() => toggleFavorite(evt.eventId)}
               role={role}
               onEdit={() => setModal({ kind: "edit", event: evt })}
+              onCheckout={() => onCheckout?.(evt.eventId)}
             />
           ))}
         </div>
@@ -245,12 +246,14 @@ function EventCard({
   onToggleFavorite,
   role,
   onEdit,
+  onCheckout,
 }: {
   event: Event;
   isFavorite: boolean;
   onToggleFavorite: () => void;
   role: RoleName;
   onEdit: () => void;
+  onCheckout?: () => void;
 }) {
   const venue = resolveVenue(event.venueId);
   const Icon = iconMap[event.iconKind];
@@ -331,6 +334,10 @@ function EventCard({
             <button
               id={`btn-beli-${event.eventId}`}
               className="w-full rounded-xl bg-[#2563eb] py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#1d4ed8] active:scale-[.98]"
+              onClick={(e) => {
+                e.stopPropagation();
+                onCheckout?.();
+              }}
             >
               Beli Tiket
             </button>
