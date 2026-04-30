@@ -340,7 +340,14 @@ function AuthenticatedApp({
         <Toast toast={toast} />
         {activePage === "dashboard" ? (
           <div className="mt-5">
-            <DashboardPage data={data} user={user} />
+            <DashboardPage
+              data={data}
+              onEvent={onEvent}
+              onPromotion={() => onBlockedFeature("Promosi")}
+              onTicket={onTicket}
+              onVenue={onVenue}
+              user={user}
+            />
           </div>
         ) : activePage === "venue" ? (
           <div className="mt-5">
