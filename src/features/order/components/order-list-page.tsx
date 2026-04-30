@@ -14,7 +14,8 @@ import {
   ShoppingBag,
   CreditCard,
   ChevronDown,
-  X
+  X,
+  AlertTriangle
 } from "lucide-react";
 import { orderSeedData } from "../data/order-seed";
 import { eventSeed } from "@/features/event/data/event-seed";
@@ -62,6 +63,7 @@ export function OrderListPage({
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<PaymentStatus | "All">("All");
   const [editModal, setEditModal] = useState<{ isOpen: boolean; order?: Order }>({ isOpen: false });
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; order?: Order }>({ isOpen: false });
 
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
@@ -82,9 +84,14 @@ export function OrderListPage({
     return { total, paid, pending, revenue };
   }, [filteredOrders]);
 
-  function handleDelete(orderId: string) {
-    if (confirm("Apakah Anda yakin ingin menghapus order ini?")) {
-      setOrders(prev => prev.filter(o => o.orderId !== orderId));
+  function handleDelete(order: Order) {
+    setDeleteModal({ isOpen: true, order });
+  }
+
+  function confirmDelete() {
+    if (deleteModal.order) {
+      setOrders(prev => prev.filter(o => o.orderId !== deleteModal.order!.orderId));
+      setDeleteModal({ isOpen: false });
     }
   }
 
@@ -218,7 +225,7 @@ export function OrderListPage({
                           </button>
                           <button 
                             className="p-2 rounded-lg text-red-600 hover:bg-red-50 transition"
-                            onClick={() => handleDelete(order.orderId)}
+                            onClick={() => handleDelete(order)}
                             title="Delete Order"
                           >
                             <Trash2 size={16} />
@@ -275,6 +282,43 @@ export function OrderListPage({
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+          <style>{`
+            @keyframes modalIn {
+              from { opacity: 0; transform: scale(0.95); }
+              to { opacity: 1; transform: scale(1); }
+            }
+          `}</style>
+        </div>
+      )}
+
+      {/* Delete Modal */}
+      {deleteModal.isOpen && deleteModal.order && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4">
+          <div className="w-full max-w-md animate-[modalIn_0.2s_ease-out] rounded-2xl bg-white shadow-2xl p-6">
+            <div className="flex justify-center mb-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-50 ring-4 ring-red-100">
+                <AlertTriangle className="text-red-600" size={28} />
+              </div>
+            </div>
+            <h2 className="text-center text-xl font-extrabold text-slate-900 mb-2">Hapus Pesanan?</h2>
+            <p className="text-center text-sm font-semibold text-slate-500 mb-6">
+              Apakah Anda yakin ingin menghapus pesanan <span className="text-slate-900 font-bold">#{deleteModal.order.orderId}</span>? Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteModal({ isOpen: false })}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-sm hover:bg-slate-50 transition"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition"
+              >
+                Hapus
+              </button>
             </div>
           </div>
           <style>{`
