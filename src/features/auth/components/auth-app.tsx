@@ -26,9 +26,19 @@ type AuthScreen = "login" | "register";
 type AppPage = "dashboard" | "profile" | "venue" | "event" | "ticket" | "seat" | "artist" | "ticket-category";
 const sessionStorageKey = "tiktaktuk-auth-user-id";
 
-function readInitialSession() {
+function readSessionSnapshot() {
   if (typeof window === "undefined") return null;
   return window.localStorage.getItem(sessionStorageKey);
+}
+
+function writeSession(userId: string | null) {
+  if (typeof window === "undefined") return;
+
+  if (userId) {
+    window.localStorage.setItem(sessionStorageKey, userId);
+  } else {
+    window.localStorage.removeItem(sessionStorageKey);
+  }
 }
 
 export function AuthApp() {
@@ -36,7 +46,21 @@ export function AuthApp() {
   const [screen, setScreen] = useState<AuthScreen>("login");
   const [activePage, setActivePage] = useState<AppPage>("dashboard");
   const [toast, setToast] = useState<ToastState>(null);
-  const [sessionUserId, setSessionUserId] = useState<string | null>(() => readInitialSession());
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    function syncSession() {
+      setSessionUserId(readSessionSnapshot());
+    }
+
+    const timer = window.setTimeout(syncSession, 0);
+    window.addEventListener("storage", syncSession);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("storage", syncSession);
+    };
+  }, []);
 
   useEffect(() => {
     if (!toast) return;
@@ -63,7 +87,7 @@ export function AuthApp() {
 
     setSessionUserId(user.userId);
     setActivePage("dashboard");
-    window.localStorage.setItem(sessionStorageKey, user.userId);
+    writeSession(user.userId);
     showToast({ tone: "success", message: `Berhasil masuk sebagai ${roleLabels[user.role]}.` });
   }
 
@@ -71,7 +95,7 @@ export function AuthApp() {
     setSessionUserId(null);
     setScreen("login");
     setActivePage("dashboard");
-    window.localStorage.removeItem(sessionStorageKey);
+    writeSession(null);
     showToast({ tone: "success", message: "Session berakhir. Anda kembali ke halaman Login." });
   }
 
