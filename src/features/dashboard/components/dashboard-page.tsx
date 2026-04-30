@@ -11,11 +11,18 @@ import { roleLabels } from "@/features/auth/data/auth-seed";
 import type { AuthSeed, SessionUser } from "@/features/auth/types";
 import { getProfileName } from "@/features/auth/lib/auth-helpers";
 import { eventSeed, type Event } from "@/features/event/data/event-seed";
+import { orderSeedData } from "@/features/order/data/order-seed";
+import type { Order } from "@/features/order/types";
+import { promotionSeedData } from "@/features/promotion/data/promotion-seed";
+import type { Promotion } from "@/features/promotion/types";
+import {
+  orderSeed as ticketOrderSeed,
+  ticketCategorySeed as ticketCategories,
+  ticketSeed,
+} from "@/features/ticket/data/ticket-seed";
 import { venueSeed, type Venue } from "@/features/venue/data/venue-seed";
 
 type StatTone = "blue" | "green" | "purple" | "orange";
-
-const zeroCurrency = "Rp 0";
 
 type DashboardActions = {
   onEvent: () => void;
@@ -28,6 +35,34 @@ function formatNumber(value: number) {
   return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
+function formatCurrency(value: number) {
+  return `Rp ${formatNumber(value)}`;
+}
+
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function getEventStatusBadge(event: Event) {
+  const eventStart = new Date(event.eventDateTime);
+  const eventEnd = new Date(eventStart.getTime() + 4 * 60 * 60 * 1000);
+  const now = new Date();
+
+  if (now >= eventStart && now <= eventEnd) {
+    return { label: "LIVE", tone: "green" as const };
+  }
+
+  if (now < eventStart) {
+    return { label: "AKAN DATANG", tone: "blue" as const };
+  }
+
+  return { label: "SELESAI", tone: "slate" as const };
+}
+
 function getOrganizerEvents(data: AuthSeed, user: SessionUser): Event[] {
   const organizer = data.organizers.find((item) => item.userId === user.userId);
   return organizer ? eventSeed.events.filter((event) => event.organizerId === organizer.organizerId) : [];
@@ -35,6 +70,73 @@ function getOrganizerEvents(data: AuthSeed, user: SessionUser): Event[] {
 
 function getEventVenueCount(events: Event[]) {
   return new Set(events.map((event) => event.venueId)).size;
+}
+
+function getEvent(eventId: string) {
+  return eventSeed.events.find((event) => event.eventId === eventId);
+}
+
+function getVenue(event: Event | undefined) {
+  return event ? venueSeed.venues.find((venue) => venue.venueId === event.venueId) : undefined;
+}
+
+function getPaidOrders(orders: Order[]) {
+  return orders.filter((order) => order.paymentStatus === "Paid");
+}
+
+function sumOrderAmount(orders: Order[]) {
+  return orders.reduce((total, order) => total + order.totalAmount, 0);
+}
+
+function getOrdersByEventIds(eventIds: Set<string>) {
+  return orderSeedData.filter((order) => eventIds.has(order.eventId));
+}
+
+function getTicketsByEventIds(eventIds: Set<string>) {
+  return ticketSeed.filter((ticket) => {
+    const order = ticketOrderSeed.find((item) => item.orderId === ticket.torderId);
+    return order ? eventIds.has(order.eventId) : false;
+  });
+}
+
+function getEventTicketQuota(eventId: string) {
+  return ticketCategories
+    .filter((category) => category.eventId === eventId)
+    .reduce((total, category) => total + category.quota, 0);
+}
+
+function getSoldPercentage(sold: number, quota: number) {
+  if (quota <= 0) return 0;
+  return Math.round((sold / quota) * 100);
+}
+
+function getCustomerOrders(data: AuthSeed, user: SessionUser) {
+  const customer = data.customers.find((item) => item.userId === user.userId);
+  const orders = customer ? orderSeedData.filter((order) => order.customerId === customer.customerId) : [];
+
+  return { customer, orders };
+}
+
+function getCustomerTickets(customerId: string | undefined) {
+  if (!customerId) return [];
+
+  const orderIds = new Set(
+    ticketOrderSeed.filter((order) => order.customerId === customerId).map((order) => order.orderId),
+  );
+
+  return ticketSeed.filter((ticket) => orderIds.has(ticket.torderId));
+}
+
+function getTicketOrderStatus(orderId: string) {
+  return orderSeedData.find((order) => order.orderId === orderId)?.paymentStatus ?? "Paid";
+}
+
+function isPromotionActive(promotion: Promotion) {
+  const today = new Date();
+  const startDate = new Date(`${promotion.startDate}T00:00:00`);
+  const endDate = new Date(`${promotion.endDate}T23:59:59`);
+
+  return today >= startDate && today <= endDate && promotion.usageCount < promotion.usageLimit;
 }
 
 export function DashboardPage({
@@ -70,6 +172,11 @@ function AdminDashboard({
     (largest, venue) => (!largest || venue.capacity > largest.capacity ? venue : largest),
     null,
   );
+  const activePromotions = promotionSeedData.filter(isPromotionActive);
+  const platformRevenue = sumOrderAmount(getPaidOrders(orderSeedData));
+  const activePercentagePromotions = activePromotions.filter((promotion) => promotion.discountType === "Percentage");
+  const activeNominalPromotions = activePromotions.filter((promotion) => promotion.discountType === "Nominal");
+  const totalPromotionUsage = promotionSeedData.reduce((total, promotion) => total + promotion.usageCount, 0);
 
   return (
     <section className="space-y-6">
@@ -91,8 +198,8 @@ function AdminDashboard({
             value: String(data.users.length),
           },
           { icon: CalendarDays, label: "TOTAL ACARA", note: "Bulan ini", tone: "green", value: String(eventSeed.events.length) },
-          { icon: TrendingUp, label: "OMZET PLATFORM", note: "Gross volume", tone: "purple", value: zeroCurrency },
-          { icon: BadgePercent, label: "PROMOSI AKTIF", note: "Running campaigns", tone: "orange", value: "0" },
+          { icon: TrendingUp, label: "OMZET PLATFORM", note: "Gross volume", tone: "purple", value: formatCurrency(platformRevenue) },
+          { icon: BadgePercent, label: "PROMOSI AKTIF", note: "Running campaigns", tone: "orange", value: String(activePromotions.length) },
         ]}
       />
       <div className="grid gap-5 lg:grid-cols-2">
@@ -108,10 +215,11 @@ function AdminDashboard({
         />
         <InsightCard
           action="Kelola Promosi"
+          onAction={onPromotion}
           rows={[
-            ["Promo Persentase", "0 Aktif"],
-            ["Promo Potongan Nominal", "0 Aktif"],
-            ["Total Penggunaan", "0 Kali"],
+            ["Promo Persentase", `${activePercentagePromotions.length} Aktif`],
+            ["Promo Potongan Nominal", `${activeNominalPromotions.length} Aktif`],
+            ["Total Penggunaan", `${formatNumber(totalPromotionUsage)} Kali`],
           ]}
           title="Marketing & Promosi"
         />
@@ -132,6 +240,10 @@ function OrganizerDashboard({
 }) {
   const events = getOrganizerEvents(data, user);
   const venueCount = getEventVenueCount(events);
+  const eventIds = new Set(events.map((event) => event.eventId));
+  const organizerOrders = getOrdersByEventIds(eventIds);
+  const organizerTickets = getTicketsByEventIds(eventIds);
+  const organizerRevenue = sumOrderAmount(getPaidOrders(organizerOrders));
 
   return (
     <section className="space-y-6">
@@ -148,12 +260,28 @@ function OrganizerDashboard({
       <StatGrid
         stats={[
           { icon: CalendarDays, label: "ACARA AKTIF", note: "Dalam koordinasi", tone: "blue", value: String(events.length) },
-          { icon: Ticket, label: "TIKET TERJUAL", note: "Total terjual", tone: "green", value: "0" },
-          { icon: TrendingUp, label: "REVENUE", note: "Bulan ini", tone: "purple", value: zeroCurrency },
+          { icon: Ticket, label: "TIKET TERJUAL", note: "Total terjual", tone: "green", value: String(organizerTickets.length) },
+          { icon: TrendingUp, label: "REVENUE", note: "Bulan ini", tone: "purple", value: formatCurrency(organizerRevenue) },
           { icon: MapPin, label: "VENUE MITRA", note: "Lokasi aktif", tone: "orange", value: String(venueCount) },
         ]}
       />
       <ListPanel
+        onAction={onEvent}
+        rows={events.map((event) => {
+          const venue = getVenue(event);
+          const eventOrders = organizerOrders.filter((order) => order.eventId === event.eventId);
+          const eventTickets = getTicketsByEventIds(new Set([event.eventId]));
+          const eventRevenue = sumOrderAmount(getPaidOrders(eventOrders));
+          const soldPercentage = getSoldPercentage(eventTickets.length, getEventTicketQuota(event.eventId));
+
+          return {
+            badge: getEventStatusBadge(event),
+            detail: `${soldPercentage}% terjual | ${eventTickets.length} tiket terdata | ${venue?.venueName ?? "Venue belum tersedia"}`,
+            id: event.eventId,
+            label: event.eventTitle,
+            value: formatCurrency(eventRevenue),
+          };
+        })}
         subtitle="Status acara yang Anda kelola"
         title="Performa Acara"
       />
@@ -172,6 +300,28 @@ function CustomerDashboard({
   onTicket: () => void;
   user: SessionUser;
 }) {
+  const { customer, orders } = getCustomerOrders(data, user);
+  const activePromotions = promotionSeedData.filter(isPromotionActive);
+  const paidOrders = getPaidOrders(orders);
+  const totalSpend = sumOrderAmount(paidOrders);
+  const customerTickets = getCustomerTickets(customer?.customerId);
+  const activeTickets = customerTickets.filter((ticket) => getTicketOrderStatus(ticket.torderId) === "Paid");
+  const joinedEventCount = new Set(orders.map((order) => order.eventId)).size;
+  const ticketRows = (activeTickets.length > 0 ? activeTickets : customerTickets).slice(0, 5).map((ticket) => {
+    const ticketOrder = ticketOrderSeed.find((order) => order.orderId === ticket.torderId);
+    const event = getEvent(ticketOrder?.eventId ?? "");
+    const venue = getVenue(event);
+    const category = ticketCategories.find((item) => item.categoryId === ticket.tcategoryId);
+
+    return {
+      badge: { label: category?.categoryName ?? "TIKET", tone: "blue" as const },
+      detail: `${category?.categoryName ?? "Kategori"} | ${venue?.venueName ?? "Venue belum tersedia"}`,
+      id: ticket.ticketId,
+      label: event?.eventTitle ?? ticket.ticketCode,
+      value: formatDate(event?.eventDateTime ?? new Date().toISOString()),
+    };
+  });
+
   return (
     <section className="space-y-6">
       <HeroBanner
@@ -184,14 +334,15 @@ function CustomerDashboard({
       />
       <StatGrid
         stats={[
-          { icon: Ticket, label: "TIKET AKTIF", note: "Siap digunakan", tone: "blue", value: "0" },
-          { icon: CalendarDays, label: "ACARA DIIKUTI", note: "Total pengalaman", tone: "green", value: "0" },
-          { icon: TrendingUp, label: "KODE PROMO", note: "Tersedia untuk Anda", tone: "purple", value: "0" },
-          { icon: Music2, label: "TOTAL BELANJA", note: "Bulan ini", tone: "orange", value: zeroCurrency },
+          { icon: Ticket, label: "TIKET AKTIF", note: "Siap digunakan", tone: "blue", value: String(activeTickets.length) },
+          { icon: CalendarDays, label: "ACARA DIIKUTI", note: "Total pengalaman", tone: "green", value: String(joinedEventCount) },
+          { icon: TrendingUp, label: "KODE PROMO", note: "Tersedia untuk Anda", tone: "purple", value: String(activePromotions.length) },
+          { icon: Music2, label: "TOTAL BELANJA", note: "Bulan ini", tone: "orange", value: formatCurrency(totalSpend) },
         ]}
       />
       <ListPanel
         onAction={onTicket}
+        rows={ticketRows}
         subtitle="Tiket pertunjukan yang akan datang"
         title="Tiket Mendatang"
       />
@@ -349,8 +500,29 @@ function InsightCard({
   );
 }
 
-function ListPanel({ onAction, subtitle, title }: { onAction?: () => void; subtitle: string; title: string }) {
+function ListPanel({
+  onAction,
+  rows = [],
+  subtitle,
+  title,
+}: {
+  onAction?: () => void;
+  rows?: {
+    badge?: { label: string; tone: "blue" | "green" | "slate" };
+    detail: string;
+    id?: string;
+    label: string;
+    value: string;
+  }[];
+  subtitle: string;
+  title: string;
+}) {
   const disabled = !onAction;
+  const badgeClass = {
+    blue: "bg-blue-50 text-blue-600",
+    green: "bg-emerald-50 text-emerald-600",
+    slate: "bg-slate-100 text-slate-500",
+  };
 
   return (
     <article className="rounded-xl border border-slate-100 bg-white p-6 shadow-[0_2px_10px_rgba(15,23,42,0.08)]">
@@ -370,9 +542,35 @@ function ListPanel({ onAction, subtitle, title }: { onAction?: () => void; subti
           Lihat Semua
         </button>
       </div>
-      <div className="mt-8 rounded-lg border border-dashed border-slate-200 px-4 py-8 text-center text-sm font-bold text-slate-400">
-        Data belum tersedia.
-      </div>
+      {rows.length > 0 ? (
+        <div className="mt-8 divide-y divide-slate-100 rounded-lg border border-slate-100">
+          {rows.map((row, index) => (
+            <div
+              className="flex items-start justify-between gap-4 px-4 py-3"
+              key={row.id ?? `${row.label}-${row.value}-${index}`}
+            >
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-extrabold text-slate-800">{row.label}</p>
+                  {row.badge && (
+                    <span
+                      className={`rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase ${badgeClass[row.badge.tone]}`}
+                    >
+                      {row.badge.label}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 text-xs font-semibold text-slate-400">{row.detail}</p>
+              </div>
+              <p className="shrink-0 text-xs font-extrabold text-slate-500">{row.value}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-8 rounded-lg border border-dashed border-slate-200 px-4 py-8 text-center text-sm font-bold text-slate-400">
+          Data belum tersedia.
+        </div>
+      )}
     </article>
   );
 }

@@ -18,7 +18,7 @@ export const eventSeed: EventSeed = {
   events: [
     {
       eventId: "evt-001",
-      eventDateTime: "2024-05-15T19:00:00",
+      eventDateTime: "2026-04-30T18:00:00",
       eventTitle: "Konser Melodi Senja",
       venueId: "ven-001",
       organizerId: "org-001",
@@ -29,7 +29,7 @@ export const eventSeed: EventSeed = {
     },
     {
       eventId: "evt-002",
-      eventDateTime: "2024-05-22T10:00:00",
+      eventDateTime: "2026-04-30T18:15:00",
       eventTitle: "Festival Seni Budaya",
       venueId: "ven-002",
       organizerId: "org-002",
@@ -40,7 +40,7 @@ export const eventSeed: EventSeed = {
     },
     {
       eventId: "evt-003",
-      eventDateTime: "2024-06-10T18:00:00",
+      eventDateTime: "2026-04-30T18:30:00",
       eventTitle: "Malam Akustik Bandung",
       venueId: "ven-003",
       organizerId: "org-003",
@@ -51,7 +51,7 @@ export const eventSeed: EventSeed = {
     },
     {
       eventId: "evt-004",
-      eventDateTime: "2024-06-18T17:00:00",
+      eventDateTime: "2026-04-30T18:45:00",
       eventTitle: "Malang Creative Expo",
       venueId: "ven-004",
       organizerId: "org-004",
@@ -62,7 +62,7 @@ export const eventSeed: EventSeed = {
     },
     {
       eventId: "evt-005",
-      eventDateTime: "2024-07-01T19:30:00",
+      eventDateTime: "2026-04-30T19:00:00",
       eventTitle: "Jogja Art Night",
       venueId: "ven-005",
       organizerId: "org-005",
@@ -73,7 +73,7 @@ export const eventSeed: EventSeed = {
     },
     {
       eventId: "evt-006",
-      eventDateTime: "2024-07-12T18:00:00",
+      eventDateTime: "2026-04-30T19:15:00",
       eventTitle: "Surabaya Sound Fest",
       venueId: "ven-006",
       organizerId: "org-001",
@@ -84,7 +84,7 @@ export const eventSeed: EventSeed = {
     },
     {
       eventId: "evt-007",
-      eventDateTime: "2024-07-20T19:00:00",
+      eventDateTime: "2026-04-30T19:30:00",
       eventTitle: "Bali Sunset Concert",
       venueId: "ven-007",
       organizerId: "org-002",
@@ -95,7 +95,7 @@ export const eventSeed: EventSeed = {
     },
     {
       eventId: "evt-008",
-      eventDateTime: "2024-08-05T16:00:00",
+      eventDateTime: "2026-04-30T19:45:00",
       eventTitle: "Makassar Music Fiesta",
       venueId: "ven-008",
       organizerId: "org-003",
@@ -106,7 +106,7 @@ export const eventSeed: EventSeed = {
     },
     {
       eventId: "evt-009",
-      eventDateTime: "2024-08-15T18:30:00",
+      eventDateTime: "2026-04-30T20:00:00",
       eventTitle: "Medan Harmoni Festival",
       venueId: "ven-009",
       organizerId: "org-004",
@@ -117,7 +117,7 @@ export const eventSeed: EventSeed = {
     },
     {
       eventId: "evt-010",
-      eventDateTime: "2024-08-25T19:00:00",
+      eventDateTime: "2026-04-30T20:15:00",
       eventTitle: "Semarang Cultural Night",
       venueId: "ven-010",
       organizerId: "org-005",

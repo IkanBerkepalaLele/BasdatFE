@@ -4,6 +4,7 @@ export const roleLabels: Record<RoleName, string> = {
   admin: "Administrator",
   organizer: "Penyelenggara",
   customer: "Pelanggan",
+  guest: "Tamu",
 };
 
 export const authSeed: AuthSeed = {

@@ -16,6 +16,7 @@ const menuItems: Record<RoleName, string[]> = {
     "Kategori Tiket",
     "Manajemen Tiket",
     "Semua Order",
+    "Promosi",
     "Tiket (Aset)",
     "Order (Aset)",
   ],
@@ -28,13 +29,15 @@ const menuItems: Record<RoleName, string[]> = {
     "Kategori Tiket",
     "Manajemen Tiket",
     "Semua Order",
+    "Promosi",
     "Tiket (Aset)",
     "Order (Aset)",
   ],
   customer: ["Dashboard", "Tiket Saya", "Pesanan", "Cari Event", "Promosi", "Venue", "Artis", "Kategori Tiket"],
+  guest: [],
 };
 
-type ActivePage = "dashboard" | "profile" | "venue" | "event" | "ticket" | "seat" | "artist" | "ticket-category";
+type ActivePage = "dashboard" | "profile" | "venue" | "event" | "ticket" | "seat" | "artist" | "ticket-category" | "order" | "promotion" | "checkout";
 
 const labelPageMap: Partial<Record<string, ActivePage>> = {
   Artis: "artist",
@@ -46,7 +49,10 @@ const labelPageMap: Partial<Record<string, ActivePage>> = {
   "Manajemen Kursi": "seat",
   "Manajemen Tiket": "ticket",
   "Manajemen Venue": "venue",
+  Pesanan: "order",
+  Promosi: "promotion",
   "Semua Event": "event",
+  "Semua Order": "order",
   "Tiket Saya": "ticket",
   Venue: "venue",
 };
@@ -63,8 +69,10 @@ export function AppNavbar({
   onVenue,
   onTicket,
   onSeat,
+  onOrder,
+  onPromotion,
   role,
-}: {
+  }: {
   activePage: ActivePage;
   onArtist: () => void;
   onDashboard: () => void;
@@ -76,8 +84,10 @@ export function AppNavbar({
   onVenue: () => void;
   onTicket: () => void;
   onSeat: () => void;
+  onOrder: () => void;
+  onPromotion: () => void;
   role: RoleName;
-}) {
+  }) {
   const [open, setOpen] = useState(false);
   const items = menuItems[role];
 
@@ -102,6 +112,10 @@ export function AppNavbar({
       onTicket(); 
     } else if (label === "Manajemen Kursi") {
       onSeat(); 
+    } else if (label === "Semua Order" || label === "Pesanan") {
+      onOrder();
+    } else if (label === "Promosi") {
+      onPromotion();
     } else {
       onFeatureBlocked(label);
     }
