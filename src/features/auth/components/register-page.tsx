@@ -1,13 +1,13 @@
 "use client";
 
-import { ArrowLeft, Building2, UserRound } from "lucide-react";
+import { ArrowLeft, Building2, ShieldCheck, UserRound } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { BrandMark } from "@/shared/components/brand-mark";
 import { FormField } from "@/shared/components/form-field";
 import type { RegisterPayload } from "../lib/auth-helpers";
 import type { RoleName } from "../types";
 
-type RegisterRole = Exclude<RoleName, "admin">;
+type RegisterRole = RoleName;
 
 type RegisterPageProps = {
   onBackToLogin: () => void;
@@ -47,7 +47,7 @@ function RolePicker({
     <>
       <div className="mt-10 rounded-[22px] bg-white px-8 py-8 shadow-[0_18px_46px_rgba(15,23,42,0.12)] sm:px-10">
         <button className="mx-auto mb-7 flex items-center gap-2 text-base font-extrabold text-[#3481ff]" onClick={onBack}>
-          <ArrowLeft size={18} /> Kembali
+          <ArrowLeft size={18} /> Kembali ke Login
         </button>
         <h2 className="text-2xl font-extrabold text-slate-950">Jenis Pengguna</h2>
         <p className="mt-2 text-base font-semibold text-slate-400">
@@ -65,6 +65,12 @@ function RolePicker({
             icon={<Building2 className="text-[#f05b2d]" size={32} />}
             label="Penyelenggara"
             onClick={() => onSelect("organizer")}
+          />
+          <RoleCard
+            description="Kelola sistem dan pantau data platform"
+            icon={<ShieldCheck className="text-[#28364b]" size={32} />}
+            label="Administrator"
+            onClick={() => onSelect("admin")}
           />
         </div>
       </div>
@@ -117,7 +123,12 @@ function RegisterForm({
     password: "",
     confirmation: "",
   });
-  const title = role === "customer" ? "Daftar sebagai Pelanggan" : "Daftar sebagai Penyelenggara";
+  const title =
+    role === "customer"
+      ? "Daftar sebagai Pelanggan"
+      : role === "organizer"
+        ? "Daftar sebagai Penyelenggara"
+        : "Daftar sebagai Administrator";
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -138,28 +149,32 @@ function RegisterForm({
           Buat akun baru untuk memulai pengalaman Anda
         </p>
         <div className="mt-8 space-y-5">
-          <FormField
-            label="Nama Lengkap"
-            name="fullName"
-            onChange={(value) => setForm((current) => ({ ...current, fullName: value }))}
-            placeholder="Masukkan nama lengkap"
-            value={form.fullName}
-          />
-          <FormField
-            label="Email"
-            name="email"
-            onChange={(value) => setForm((current) => ({ ...current, email: value }))}
-            placeholder="Masukkan email"
-            type="email"
-            value={form.email}
-          />
-          <FormField
-            label="Nomor Telepon"
-            name="phoneNumber"
-            onChange={(value) => setForm((current) => ({ ...current, phoneNumber: value }))}
-            placeholder="Masukkan nomor telepon"
-            value={form.phoneNumber}
-          />
+          {role !== "admin" && (
+            <>
+              <FormField
+                label="Nama Lengkap"
+                name="fullName"
+                onChange={(value) => setForm((current) => ({ ...current, fullName: value }))}
+                placeholder="Masukkan nama lengkap"
+                value={form.fullName}
+              />
+              <FormField
+                label="Email"
+                name="email"
+                onChange={(value) => setForm((current) => ({ ...current, email: value }))}
+                placeholder="Masukkan email"
+                type="email"
+                value={form.email}
+              />
+              <FormField
+                label="Nomor Telepon"
+                name="phoneNumber"
+                onChange={(value) => setForm((current) => ({ ...current, phoneNumber: value }))}
+                placeholder="Masukkan nomor telepon"
+                value={form.phoneNumber}
+              />
+            </>
+          )}
           <FormField
             label="Username"
             name="registerUsername"

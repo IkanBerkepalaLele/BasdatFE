@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   List,
-  Music2,
   Pencil,
   Plus,
   Search,
