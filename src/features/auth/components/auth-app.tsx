@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Toast } from "@/shared/components/toast";
 import { DashboardPage } from "@/features/dashboard/components/dashboard-page";
@@ -30,6 +31,55 @@ type AuthScreen = "guest" | "guest-ticket-category" | "guest-promotion" | "login
 type AppPage = "dashboard" | "profile" | "venue" | "event" | "ticket" | "seat" | "artist" | "ticket-category"| "order" | "checkout" | "promotion";
 const sessionStorageKey = "tiktaktuk-auth-user-id";
 
+const pagePathMap: Record<AppPage, string> = {
+  artist: "/artist",
+  checkout: "/checkout",
+  dashboard: "/dashboard",
+  event: "/event",
+  order: "/order",
+  profile: "/profile",
+  promotion: "/promotion",
+  seat: "/seat",
+  ticket: "/ticket",
+  "ticket-category": "/ticket-category",
+  venue: "/venue",
+};
+
+const pathPageMap: Record<string, AppPage> = {
+  "/artist": "artist",
+  "/checkout": "checkout",
+  "/dashboard": "dashboard",
+  "/event": "event",
+  "/order": "order",
+  "/profile": "profile",
+  "/promotion": "promotion",
+  "/seat": "seat",
+  "/ticket": "ticket",
+  "/ticket-category": "ticket-category",
+  "/venue": "venue",
+};
+
+function normalizePath(pathname: string) {
+  const path = pathname.replace(/\/+$/, "");
+  return path || "/";
+}
+
+function getPageFromPath(pathname: string) {
+  return pathPageMap[normalizePath(pathname)] ?? null;
+}
+
+function getGuestScreenFromPath(pathname: string): AuthScreen {
+  const path = normalizePath(pathname);
+
+  if (path === "/login") return "login";
+  if (path === "/register") return "register";
+  if (path === "/ticket-category") return "guest-ticket-category";
+  if (path === "/promotion") return "guest-promotion";
+  if (pathPageMap[path]) return "login";
+
+  return "guest";
+}
+
 function readSessionSnapshot() {
   if (typeof window === "undefined") return null;
   return window.localStorage.getItem(sessionStorageKey);
@@ -46,9 +96,9 @@ function writeSession(userId: string | null) {
 }
 
 export function AuthApp() {
+  const pathname = usePathname();
+  const router = useRouter();
   const [data, setData] = useState<AuthSeed>(() => cloneAuthSeed());
-  const [screen, setScreen] = useState<AuthScreen>("guest");
-  const [activePage, setActivePage] = useState<AppPage>("dashboard");
   const [toast, setToast] = useState<ToastState>(null);
   const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
@@ -77,21 +127,50 @@ export function AuthApp() {
     () => data.users.find((user) => user.userId === sessionUserId) ?? null,
     [data.users, sessionUserId],
   );
+  const activePage = currentUser ? getPageFromPath(pathname) ?? "dashboard" : "dashboard";
+  const currentScreen = currentUser ? "guest" : getGuestScreenFromPath(pathname);
+
+  useEffect(() => {
+    if (!currentUser) return;
+
+    if (!getPageFromPath(pathname) && normalizePath(pathname) !== "/dashboard") {
+      router.replace("/dashboard");
+    }
+  }, [currentUser, pathname, router]);
 
   function showToast(nextToast: NonNullable<ToastState>) {
     setToast(nextToast);
   }
 
+  function navigateGuest(nextScreen: AuthScreen) {
+    const nextPath =
+      nextScreen === "login"
+        ? "/login"
+        : nextScreen === "register"
+          ? "/register"
+          : nextScreen === "guest-ticket-category"
+            ? "/ticket-category"
+            : nextScreen === "guest-promotion"
+              ? "/promotion"
+            : "/";
+
+    router.push(nextPath);
+  }
+
+  function navigateApp(page: AppPage) {
+    router.push(pagePathMap[page]);
+  }
+
   function showGuestPromotion() {
-    setScreen("guest-promotion");
+    navigateGuest("guest-promotion");
   }
 
   function showGuestLanding() {
-    setScreen("guest");
+    navigateGuest("guest");
   }
 
   function showGuestTicketCategory() {
-    setScreen("guest-ticket-category");
+    navigateGuest("guest-ticket-category");
   }
 
   function login(username: string, password: string) {
@@ -103,16 +182,16 @@ export function AuthApp() {
     }
 
     setSessionUserId(user.userId);
-    setActivePage("dashboard");
+    const requestedPage = getPageFromPath(pathname) ?? "dashboard";
     writeSession(user.userId);
+    router.replace(pagePathMap[requestedPage]);
     showToast({ tone: "success", message: `Berhasil masuk sebagai ${roleLabels[user.role]}.` });
   }
 
   function logout() {
     setSessionUserId(null);
-    setScreen("guest");
-    setActivePage("dashboard");
     writeSession(null);
+    router.replace("/");
     showToast({ tone: "success", message: "Session berakhir. Anda kembali ke halaman awal." });
   }
 
@@ -143,7 +222,7 @@ export function AuthApp() {
     }
 
     setData((current) => createUser(current, role, payload));
-    setScreen("login");
+    navigateGuest("login");
     showToast({ tone: "success", message: "Akun baru berhasil dibuat. Silakan login." });
   }
 
@@ -232,46 +311,46 @@ export function AuthApp() {
         <div className="fixed left-1/2 top-5 z-50 w-[min(92vw,560px)] -translate-x-1/2">
           <Toast toast={toast} />
         </div>
-        {screen === "guest" ? (
+        {currentScreen === "guest" ? (
           <GuestLandingPage
             onLanding={showGuestLanding}
-            onLogin={() => setScreen("login")}
+            onLogin={() => navigateGuest("login")}
             onPromotion={showGuestPromotion}
-            onRegister={() => setScreen("register")}
+            onRegister={() => navigateGuest("register")}
             onTicketCategory={showGuestTicketCategory}
           />
-        ) : screen === "guest-ticket-category" ? (
+        ) : currentScreen === "guest-ticket-category" ? (
           <GuestShell
             onLanding={showGuestLanding}
-            onLogin={() => setScreen("login")}
+            onLogin={() => navigateGuest("login")}
             onPromotion={showGuestPromotion}
-            onRegister={() => setScreen("register")}
+            onRegister={() => navigateGuest("register")}
             onTicketCategory={showGuestTicketCategory}
           >
             <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
               <TicketCategoryListPage role="guest" />
             </div>
           </GuestShell>
-        ) : screen === "guest-promotion" ? (
+        ) : currentScreen === "guest-promotion" ? (
           <GuestShell
             onLanding={showGuestLanding}
-            onLogin={() => setScreen("login")}
+            onLogin={() => navigateGuest("login")}
             onPromotion={showGuestPromotion}
-            onRegister={() => setScreen("register")}
+            onRegister={() => navigateGuest("register")}
             onTicketCategory={showGuestTicketCategory}
           >
             <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
               <PromotionListPage role="guest" />
             </div>
           </GuestShell>
-        ) : screen === "login" ? (
+        ) : currentScreen === "login" ? (
           <LoginPage
             onBackToLanding={showGuestLanding}
             onLogin={login}
-            onRegister={() => setScreen("register")}
+            onRegister={() => navigateGuest("register")}
           />
         ) : (
-          <RegisterPage onBackToLogin={() => setScreen("login")} onSubmit={register} />
+          <RegisterPage onBackToLogin={() => navigateGuest("login")} onSubmit={register} />
         )}
       </>
     );
@@ -284,20 +363,20 @@ export function AuthApp() {
       onBlockedFeature={(feature) =>
         showToast({ tone: "info", message: `${feature} akan diimplementasi rekan tim.` })
       }
-      onDashboard={() => setActivePage("dashboard")}
+      onDashboard={() => navigateApp("dashboard")}
       onLogout={logout}
-      onProfile={() => setActivePage("profile")}
-      onVenue={() => setActivePage("venue")}
-      onArtist={() => setActivePage("artist")}
-      onEvent={() => setActivePage("event")}
-      onTicketCategory={() => setActivePage("ticket-category")}
-      onTicket={() => setActivePage("ticket")}
-      onSeat={() => setActivePage("seat")}
-      onOrder={() => setActivePage("order")}
-      onPromotion={() => setActivePage("promotion")}
+      onProfile={() => navigateApp("profile")}
+      onVenue={() => navigateApp("venue")}
+      onArtist={() => navigateApp("artist")}
+      onEvent={() => navigateApp("event")}
+      onTicketCategory={() => navigateApp("ticket-category")}
+      onTicket={() => navigateApp("ticket")}
+      onSeat={() => navigateApp("seat")}
+      onOrder={() => navigateApp("order")}
+      onPromotion={() => navigateApp("promotion")}
       onCheckout={(eventId) => {
         setSelectedEventId(eventId);
-        setActivePage("checkout");
+        navigateApp("checkout");
       }}
       onProfileUpdate={updateProfile}
       onPasswordUpdate={updatePassword}
@@ -373,7 +452,14 @@ function AuthenticatedApp({
         <Toast toast={toast} />
         {activePage === "dashboard" ? (
           <div className="mt-5">
-            <DashboardPage data={data} user={user} />
+            <DashboardPage
+              data={data}
+              onEvent={onEvent}
+              onPromotion={onPromotion}
+              onTicket={onTicket}
+              onVenue={onVenue}
+              user={user}
+            />
           </div>
         ) : activePage === "venue" ? (
           <div className="mt-5">
@@ -434,7 +520,7 @@ function AuthenticatedApp({
           </div>
         ) : activePage === "checkout" ? (
           <div className="mt-5">
-            {selectedEventId && (
+            {selectedEventId ? (
               <CheckoutPage
                 eventId={selectedEventId}
                 customerId={data.customers.find((c) => c.userId === user.userId)?.customerId || ""}
@@ -442,6 +528,10 @@ function AuthenticatedApp({
                    onOrder();
                 }}
               />
+            ) : (
+              <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-12 text-center text-sm font-bold text-slate-400">
+                Pilih acara terlebih dahulu sebelum checkout.
+              </div>
             )}
           </div>
         ) : (
