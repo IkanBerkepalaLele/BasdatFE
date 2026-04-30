@@ -30,7 +30,7 @@ export function getOrganizer(data: AuthSeed, userId: string) {
   return data.organizers.find((organizer) => organizer.userId === userId);
 }
 
-export function createUser(data: AuthSeed, role: Exclude<RoleName, "admin">, form: RegisterPayload): AuthSeed {
+export function createUser(data: AuthSeed, role: RoleName, form: RegisterPayload): AuthSeed {
   const nextUserId = `usr-${String(data.users.length + 1).padStart(3, "0")}`;
   const nextRole = data.roles.find((item) => item.roleName === role);
   const nextUser: UserAccount = {
@@ -39,6 +39,17 @@ export function createUser(data: AuthSeed, role: Exclude<RoleName, "admin">, for
     password: form.password,
     role,
   };
+  const nextAccountRoles = nextRole
+    ? [...data.accountRoles, { roleId: nextRole.roleId, userId: nextUserId }]
+    : data.accountRoles;
+
+  if (role === "admin") {
+    return {
+      ...data,
+      users: [...data.users, nextUser],
+      accountRoles: nextAccountRoles,
+    };
+  }
 
   if (role === "customer") {
     const nextCustomer: Customer = {
@@ -51,9 +62,7 @@ export function createUser(data: AuthSeed, role: Exclude<RoleName, "admin">, for
     return {
       ...data,
       users: [...data.users, nextUser],
-      accountRoles: nextRole
-        ? [...data.accountRoles, { roleId: nextRole.roleId, userId: nextUserId }]
-        : data.accountRoles,
+      accountRoles: nextAccountRoles,
       customers: [...data.customers, nextCustomer],
     };
   }
@@ -68,9 +77,7 @@ export function createUser(data: AuthSeed, role: Exclude<RoleName, "admin">, for
   return {
     ...data,
     users: [...data.users, nextUser],
-    accountRoles: nextRole
-      ? [...data.accountRoles, { roleId: nextRole.roleId, userId: nextUserId }]
-      : data.accountRoles,
+    accountRoles: nextAccountRoles,
     organizers: [...data.organizers, nextOrganizer],
   };
 }

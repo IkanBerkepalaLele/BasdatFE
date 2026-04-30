@@ -10,6 +10,7 @@ import { ArtistListPage } from "@/features/artist/components/artist-list-page";
 import { TicketCategoryListPage } from "@/features/ticket-category/components/ticket-category-list-page";
 import { TicketListPage } from "@/features/ticket/components/ticket-list-page";
 import { SeatListPage } from "@/features/seat/components/seat-list-page";
+import { GuestLandingPage, GuestShell } from "@/features/guest/components/guest-landing-page";
 import { roleLabels } from "../data/auth-seed";
 import {
   authenticate,
@@ -17,29 +18,49 @@ import {
   createUser,
   type RegisterPayload,
 } from "../lib/auth-helpers";
-import type { AuthSeed, ProfileUpdatePayload, SessionUser, ToastState } from "../types";
+import type { AuthSeed, ProfileUpdatePayload, RoleName, SessionUser, ToastState } from "../types";
 import { AppNavbar } from "./app-navbar";
 import { LoginPage } from "./login-page";
 import { RegisterPage } from "./register-page";
 
-type AuthScreen = "login" | "register";
+type AuthScreen = "guest" | "guest-ticket-category" | "login" | "register";
 type AppPage = "dashboard" | "profile" | "venue" | "event" | "ticket" | "seat" | "artist" | "ticket-category";
 const sessionStorageKey = "tiktaktuk-auth-user-id";
 
-function readInitialSession() {
+function readSessionSnapshot() {
   if (typeof window === "undefined") return null;
   return window.localStorage.getItem(sessionStorageKey);
 }
 
+function writeSession(userId: string | null) {
+  if (typeof window === "undefined") return;
+
+  if (userId) {
+    window.localStorage.setItem(sessionStorageKey, userId);
+  } else {
+    window.localStorage.removeItem(sessionStorageKey);
+  }
+}
+
 export function AuthApp() {
   const [data, setData] = useState<AuthSeed>(() => cloneAuthSeed());
-  const [screen, setScreen] = useState<AuthScreen>("login");
+  const [screen, setScreen] = useState<AuthScreen>("guest");
   const [activePage, setActivePage] = useState<AppPage>("dashboard");
   const [toast, setToast] = useState<ToastState>(null);
   const [sessionUserId, setSessionUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    setSessionUserId(readInitialSession());
+    function syncSession() {
+      setSessionUserId(readSessionSnapshot());
+    }
+
+    const timer = window.setTimeout(syncSession, 0);
+    window.addEventListener("storage", syncSession);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("storage", syncSession);
+    };
   }, []);
 
   useEffect(() => {
@@ -57,6 +78,18 @@ export function AuthApp() {
     setToast(nextToast);
   }
 
+  function showGuestPromotionMessage() {
+    showToast({ tone: "info", message: "Promosi belum diimplementasi." });
+  }
+
+  function showGuestLanding() {
+    setScreen("guest");
+  }
+
+  function showGuestTicketCategory() {
+    setScreen("guest-ticket-category");
+  }
+
   function login(username: string, password: string) {
     const user = authenticate(data.users, username, password);
 
@@ -67,22 +100,25 @@ export function AuthApp() {
 
     setSessionUserId(user.userId);
     setActivePage("dashboard");
-    window.localStorage.setItem(sessionStorageKey, user.userId);
+    writeSession(user.userId);
     showToast({ tone: "success", message: `Berhasil masuk sebagai ${roleLabels[user.role]}.` });
   }
 
   function logout() {
     setSessionUserId(null);
-    setScreen("login");
+    setScreen("guest");
     setActivePage("dashboard");
-    window.localStorage.removeItem(sessionStorageKey);
-    showToast({ tone: "success", message: "Session berakhir. Anda kembali ke halaman Login." });
+    writeSession(null);
+    showToast({ tone: "success", message: "Session berakhir. Anda kembali ke halaman awal." });
   }
 
-  function register(role: "customer" | "organizer", payload: RegisterPayload) {
-    const requiredValues = Object.values(payload).map((value) => value.trim());
+  function register(role: RoleName, payload: RegisterPayload) {
+    const requiredValues =
+      role === "admin"
+        ? [payload.username, payload.password, payload.confirmation]
+        : Object.values(payload);
 
-    if (requiredValues.some((value) => !value)) {
+    if (requiredValues.some((value) => !value.trim())) {
       showToast({ tone: "error", message: "Seluruh field wajib diisi." });
       return;
     }
@@ -192,8 +228,32 @@ export function AuthApp() {
         <div className="fixed left-1/2 top-5 z-50 w-[min(92vw,560px)] -translate-x-1/2">
           <Toast toast={toast} />
         </div>
-        {screen === "login" ? (
-          <LoginPage onLogin={login} onRegister={() => setScreen("register")} />
+        {screen === "guest" ? (
+          <GuestLandingPage
+            onLanding={showGuestLanding}
+            onLogin={() => setScreen("login")}
+            onPromotion={showGuestPromotionMessage}
+            onRegister={() => setScreen("register")}
+            onTicketCategory={showGuestTicketCategory}
+          />
+        ) : screen === "guest-ticket-category" ? (
+          <GuestShell
+            onLanding={showGuestLanding}
+            onLogin={() => setScreen("login")}
+            onPromotion={showGuestPromotionMessage}
+            onRegister={() => setScreen("register")}
+            onTicketCategory={showGuestTicketCategory}
+          >
+            <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+              <TicketCategoryListPage role="guest" />
+            </div>
+          </GuestShell>
+        ) : screen === "login" ? (
+          <LoginPage
+            onBackToLanding={showGuestLanding}
+            onLogin={login}
+            onRegister={() => setScreen("register")}
+          />
         ) : (
           <RegisterPage onBackToLogin={() => setScreen("login")} onSubmit={register} />
         )}
@@ -263,6 +323,7 @@ function AuthenticatedApp({
   return (
     <div className="min-h-screen bg-[#f7f8fb] text-slate-950">
       <AppNavbar
+        activePage={activePage}
         onArtist={onArtist}
         onDashboard={onDashboard}
         onEvent={onEvent}

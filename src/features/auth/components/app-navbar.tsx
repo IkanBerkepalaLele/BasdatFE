@@ -18,7 +18,6 @@ const menuItems: Record<RoleName, string[]> = {
     "Semua Order",
     "Tiket (Aset)",
     "Order (Aset)",
-    "Profile",
   ],
   organizer: [
     "Dashboard",
@@ -31,12 +30,29 @@ const menuItems: Record<RoleName, string[]> = {
     "Semua Order",
     "Tiket (Aset)",
     "Order (Aset)",
-    "Profile",
   ],
-  customer: ["Dashboard", "Tiket Saya", "Pesanan", "Cari Event", "Promosi", "Venue", "Artis", "Kategori Tiket", "Logout"],
+  customer: ["Dashboard", "Tiket Saya", "Pesanan", "Cari Event", "Promosi", "Venue", "Artis", "Kategori Tiket"],
+};
+
+type ActivePage = "dashboard" | "profile" | "venue" | "event" | "ticket" | "seat" | "artist" | "ticket-category";
+
+const labelPageMap: Partial<Record<string, ActivePage>> = {
+  Artis: "artist",
+  "Cari Event": "event",
+  Dashboard: "dashboard",
+  "Event Saya": "event",
+  "Kategori Tiket": "ticket-category",
+  "Manajemen Artist": "artist",
+  "Manajemen Kursi": "seat",
+  "Manajemen Tiket": "ticket",
+  "Manajemen Venue": "venue",
+  "Semua Event": "event",
+  "Tiket Saya": "ticket",
+  Venue: "venue",
 };
 
 export function AppNavbar({
+  activePage,
   onArtist,
   onDashboard,
   onEvent,
@@ -49,6 +65,7 @@ export function AppNavbar({
   onSeat,
   role,
 }: {
+  activePage: ActivePage;
   onArtist: () => void;
   onDashboard: () => void;
   onEvent: () => void;
@@ -91,19 +108,27 @@ export function AppNavbar({
     setOpen(false);
   }
 
+  function isActive(label: string) {
+    return labelPageMap[label] === activePage;
+  }
+
+  function isClickable(label: string) {
+    return Boolean(labelPageMap[label]);
+  }
+
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3 sm:px-6 lg:px-8">
         <button aria-label="Dashboard" className="shrink-0" onClick={onDashboard}>
           <BrandMark compact />
         </button>
-        <nav className="hidden min-w-0 flex-1 items-center justify-start gap-1 overflow-x-auto px-2 lg:flex">
+        <nav className="hidden min-w-0 flex-1 flex-wrap items-center justify-start gap-1 px-1 lg:flex">
           {items.map((item) => {
-            const active = item === "Dashboard" || item === "Semua Event";
-            const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Semua Event" || item === "Manajemen Tiket" || item === "Tiket Saya" || item === "Manajemen Kursi" || item === "Manajemen Artist" || item === "Artis" || item === "Kategori Tiket";;
+            const active = isActive(item);
+            const clickable = isClickable(item);
             return (
               <button
-                className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-bold transition ${
+                className={`whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-extrabold transition ${
                   active
                     ? "bg-slate-900 text-white"
                     : clickable
@@ -126,7 +151,9 @@ export function AppNavbar({
           </span>
           <button
             aria-label="Profil"
-            className="rounded-lg border border-slate-200 p-2 text-slate-600 shadow-sm hover:bg-slate-50"
+            className={`rounded-lg border border-slate-200 p-2 shadow-sm hover:bg-slate-50 ${
+              activePage === "profile" ? "bg-slate-900 text-white" : "text-slate-600"
+            }`}
             onClick={onProfile}
           >
             <UserRound size={19} />
@@ -151,10 +178,16 @@ export function AppNavbar({
         <div className="border-t border-slate-200 bg-white px-4 py-3 lg:hidden">
           <div className="grid gap-2">
             {items.map((item) => {
-              const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Manajemen Tiket" || item === "Tiket Saya" || item === "Manajemen Kursi" || item === "Manajemen Artist" || item === "Artis" || item === "Kategori Tiket";              return (
+              const active = isActive(item);
+              const clickable = isClickable(item);
+              return (
                 <button
                   className={`rounded-lg px-3 py-3 text-left text-sm font-extrabold ${
-                    clickable ? "bg-slate-50 text-slate-700" : "cursor-not-allowed bg-slate-50 text-slate-300"
+                    active
+                      ? "bg-slate-900 text-white"
+                      : clickable
+                        ? "bg-slate-50 text-slate-700"
+                        : "cursor-not-allowed bg-slate-50 text-slate-300"
                   }`}
                   disabled={!clickable}
                   key={item}

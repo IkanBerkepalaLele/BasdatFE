@@ -18,6 +18,8 @@ import { eventSeed } from "@/features/event/data/event-seed";
 import { venueSeed } from "@/features/venue/data/venue-seed";
 import type { RoleName } from "@/features/auth/types";
 
+type ViewerRole = RoleName | "guest";
+
 let nextCatCounter = ticketCategorySeed.categories.length + 1;
 function generateCategoryId(): string {
   const id = `tc-${String(nextCatCounter).padStart(3, "0")}`;
@@ -47,7 +49,7 @@ type ModalState =
   | { kind: "edit"; category: TicketCategory }
   | { kind: "delete"; category: TicketCategory };
 
-export function TicketCategoryListPage({ role }: { role: RoleName }) {
+export function TicketCategoryListPage({ role }: { role: ViewerRole }) {
   const canManage = role === "admin" || role === "organizer";
   const [categories, setCategories] = useState<TicketCategory[]>(() => [
     ...ticketCategorySeed.categories,

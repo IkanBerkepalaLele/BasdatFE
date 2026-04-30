@@ -1,15 +1,17 @@
 "use client";
 
+import { ArrowLeft } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { BrandMark } from "@/shared/components/brand-mark";
 import { FormField } from "@/shared/components/form-field";
 
 type LoginPageProps = {
+  onBackToLanding: () => void;
   onLogin: (username: string, password: string) => void;
   onRegister: () => void;
 };
 
-export function LoginPage({ onLogin, onRegister }: LoginPageProps) {
+export function LoginPage({ onBackToLanding, onLogin, onRegister }: LoginPageProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
@@ -26,6 +28,13 @@ export function LoginPage({ onLogin, onRegister }: LoginPageProps) {
           className="mt-10 rounded-[22px] bg-white px-8 py-8 shadow-[0_18px_46px_rgba(15,23,42,0.12)] sm:px-10"
           onSubmit={submit}
         >
+          <button
+            className="mx-auto mb-7 flex items-center gap-2 text-base font-extrabold text-[#3481ff]"
+            onClick={onBackToLanding}
+            type="button"
+          >
+            <ArrowLeft size={18} /> Kembali ke Halaman Awal
+          </button>
           <h2 className="text-2xl font-extrabold text-slate-950">Masuk ke Akun Anda</h2>
           <p className="mt-2 text-base font-semibold text-slate-400">
             Gunakan kredensial Anda untuk mengakses platform
