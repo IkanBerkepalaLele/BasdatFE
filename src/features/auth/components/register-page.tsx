@@ -47,7 +47,7 @@ function RolePicker({
     <>
       <div className="mt-10 rounded-[22px] bg-white px-8 py-8 shadow-[0_18px_46px_rgba(15,23,42,0.12)] sm:px-10">
         <button className="mx-auto mb-7 flex items-center gap-2 text-base font-extrabold text-[#3481ff]" onClick={onBack}>
-          <ArrowLeft size={18} /> Kembali
+          <ArrowLeft size={18} /> Kembali ke Login
         </button>
         <h2 className="text-2xl font-extrabold text-slate-950">Jenis Pengguna</h2>
         <p className="mt-2 text-base font-semibold text-slate-400">

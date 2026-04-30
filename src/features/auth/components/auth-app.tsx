@@ -10,6 +10,7 @@ import { ArtistListPage } from "@/features/artist/components/artist-list-page";
 import { TicketCategoryListPage } from "@/features/ticket-category/components/ticket-category-list-page";
 import { TicketListPage } from "@/features/ticket/components/ticket-list-page";
 import { SeatListPage } from "@/features/seat/components/seat-list-page";
+import { GuestLandingPage, GuestShell } from "@/features/guest/components/guest-landing-page";
 import { roleLabels } from "../data/auth-seed";
 import {
   authenticate,
@@ -22,7 +23,7 @@ import { AppNavbar } from "./app-navbar";
 import { LoginPage } from "./login-page";
 import { RegisterPage } from "./register-page";
 
-type AuthScreen = "login" | "register";
+type AuthScreen = "guest" | "guest-ticket-category" | "login" | "register";
 type AppPage = "dashboard" | "profile" | "venue" | "event" | "ticket" | "seat" | "artist" | "ticket-category";
 const sessionStorageKey = "tiktaktuk-auth-user-id";
 
@@ -43,7 +44,7 @@ function writeSession(userId: string | null) {
 
 export function AuthApp() {
   const [data, setData] = useState<AuthSeed>(() => cloneAuthSeed());
-  const [screen, setScreen] = useState<AuthScreen>("login");
+  const [screen, setScreen] = useState<AuthScreen>("guest");
   const [activePage, setActivePage] = useState<AppPage>("dashboard");
   const [toast, setToast] = useState<ToastState>(null);
   const [sessionUserId, setSessionUserId] = useState<string | null>(null);
@@ -77,6 +78,18 @@ export function AuthApp() {
     setToast(nextToast);
   }
 
+  function showGuestPromotionMessage() {
+    showToast({ tone: "info", message: "Promosi belum diimplementasi." });
+  }
+
+  function showGuestLanding() {
+    setScreen("guest");
+  }
+
+  function showGuestTicketCategory() {
+    setScreen("guest-ticket-category");
+  }
+
   function login(username: string, password: string) {
     const user = authenticate(data.users, username, password);
 
@@ -93,10 +106,10 @@ export function AuthApp() {
 
   function logout() {
     setSessionUserId(null);
-    setScreen("login");
+    setScreen("guest");
     setActivePage("dashboard");
     writeSession(null);
-    showToast({ tone: "success", message: "Session berakhir. Anda kembali ke halaman Login." });
+    showToast({ tone: "success", message: "Session berakhir. Anda kembali ke halaman awal." });
   }
 
   function register(role: RoleName, payload: RegisterPayload) {
@@ -215,8 +228,32 @@ export function AuthApp() {
         <div className="fixed left-1/2 top-5 z-50 w-[min(92vw,560px)] -translate-x-1/2">
           <Toast toast={toast} />
         </div>
-        {screen === "login" ? (
-          <LoginPage onLogin={login} onRegister={() => setScreen("register")} />
+        {screen === "guest" ? (
+          <GuestLandingPage
+            onLanding={showGuestLanding}
+            onLogin={() => setScreen("login")}
+            onPromotion={showGuestPromotionMessage}
+            onRegister={() => setScreen("register")}
+            onTicketCategory={showGuestTicketCategory}
+          />
+        ) : screen === "guest-ticket-category" ? (
+          <GuestShell
+            onLanding={showGuestLanding}
+            onLogin={() => setScreen("login")}
+            onPromotion={showGuestPromotionMessage}
+            onRegister={() => setScreen("register")}
+            onTicketCategory={showGuestTicketCategory}
+          >
+            <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+              <TicketCategoryListPage role="guest" />
+            </div>
+          </GuestShell>
+        ) : screen === "login" ? (
+          <LoginPage
+            onBackToLanding={showGuestLanding}
+            onLogin={login}
+            onRegister={() => setScreen("register")}
+          />
         ) : (
           <RegisterPage onBackToLogin={() => setScreen("login")} onSubmit={register} />
         )}
