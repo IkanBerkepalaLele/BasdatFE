@@ -1,13 +1,13 @@
 "use client";
 
-import { ArrowLeft, Building2, UserRound } from "lucide-react";
+import { ArrowLeft, Building2, ShieldCheck, UserRound } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { BrandMark } from "@/shared/components/brand-mark";
 import { FormField } from "@/shared/components/form-field";
 import type { RegisterPayload } from "../lib/auth-helpers";
 import type { RoleName } from "../types";
 
-type RegisterRole = Exclude<RoleName, "admin">;
+type RegisterRole = RoleName;
 
 type RegisterPageProps = {
   onBackToLogin: () => void;
@@ -66,6 +66,12 @@ function RolePicker({
             label="Penyelenggara"
             onClick={() => onSelect("organizer")}
           />
+          <RoleCard
+            description="Kelola sistem dan pantau data platform"
+            icon={<ShieldCheck className="text-[#28364b]" size={32} />}
+            label="Administrator"
+            onClick={() => onSelect("admin")}
+          />
         </div>
       </div>
       <LoginLink onClick={onBack} />
@@ -117,7 +123,12 @@ function RegisterForm({
     password: "",
     confirmation: "",
   });
-  const title = role === "customer" ? "Daftar sebagai Pelanggan" : "Daftar sebagai Penyelenggara";
+  const title =
+    role === "customer"
+      ? "Daftar sebagai Pelanggan"
+      : role === "organizer"
+        ? "Daftar sebagai Penyelenggara"
+        : "Daftar sebagai Administrator";
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -138,28 +149,32 @@ function RegisterForm({
           Buat akun baru untuk memulai pengalaman Anda
         </p>
         <div className="mt-8 space-y-5">
-          <FormField
-            label="Nama Lengkap"
-            name="fullName"
-            onChange={(value) => setForm((current) => ({ ...current, fullName: value }))}
-            placeholder="Masukkan nama lengkap"
-            value={form.fullName}
-          />
-          <FormField
-            label="Email"
-            name="email"
-            onChange={(value) => setForm((current) => ({ ...current, email: value }))}
-            placeholder="Masukkan email"
-            type="email"
-            value={form.email}
-          />
-          <FormField
-            label="Nomor Telepon"
-            name="phoneNumber"
-            onChange={(value) => setForm((current) => ({ ...current, phoneNumber: value }))}
-            placeholder="Masukkan nomor telepon"
-            value={form.phoneNumber}
-          />
+          {role !== "admin" && (
+            <>
+              <FormField
+                label="Nama Lengkap"
+                name="fullName"
+                onChange={(value) => setForm((current) => ({ ...current, fullName: value }))}
+                placeholder="Masukkan nama lengkap"
+                value={form.fullName}
+              />
+              <FormField
+                label="Email"
+                name="email"
+                onChange={(value) => setForm((current) => ({ ...current, email: value }))}
+                placeholder="Masukkan email"
+                type="email"
+                value={form.email}
+              />
+              <FormField
+                label="Nomor Telepon"
+                name="phoneNumber"
+                onChange={(value) => setForm((current) => ({ ...current, phoneNumber: value }))}
+                placeholder="Masukkan nomor telepon"
+                value={form.phoneNumber}
+              />
+            </>
+          )}
           <FormField
             label="Username"
             name="registerUsername"

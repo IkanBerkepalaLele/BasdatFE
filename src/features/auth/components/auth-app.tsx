@@ -17,7 +17,7 @@ import {
   createUser,
   type RegisterPayload,
 } from "../lib/auth-helpers";
-import type { AuthSeed, ProfileUpdatePayload, SessionUser, ToastState } from "../types";
+import type { AuthSeed, ProfileUpdatePayload, RoleName, SessionUser, ToastState } from "../types";
 import { AppNavbar } from "./app-navbar";
 import { LoginPage } from "./login-page";
 import { RegisterPage } from "./register-page";
@@ -36,11 +36,7 @@ export function AuthApp() {
   const [screen, setScreen] = useState<AuthScreen>("login");
   const [activePage, setActivePage] = useState<AppPage>("dashboard");
   const [toast, setToast] = useState<ToastState>(null);
-  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    setSessionUserId(readInitialSession());
-  }, []);
+  const [sessionUserId, setSessionUserId] = useState<string | null>(() => readInitialSession());
 
   useEffect(() => {
     if (!toast) return;
@@ -79,10 +75,13 @@ export function AuthApp() {
     showToast({ tone: "success", message: "Session berakhir. Anda kembali ke halaman Login." });
   }
 
-  function register(role: "customer" | "organizer", payload: RegisterPayload) {
-    const requiredValues = Object.values(payload).map((value) => value.trim());
+  function register(role: RoleName, payload: RegisterPayload) {
+    const requiredValues =
+      role === "admin"
+        ? [payload.username, payload.password, payload.confirmation]
+        : Object.values(payload);
 
-    if (requiredValues.some((value) => !value)) {
+    if (requiredValues.some((value) => !value.trim())) {
       showToast({ tone: "error", message: "Seluruh field wajib diisi." });
       return;
     }
