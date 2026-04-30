@@ -8,4 +8,5 @@ export type Promotion = {
   startDate: string;
   endDate: string;
   usageLimit: number;
+  usageCount: number; // Added to track usage
 };

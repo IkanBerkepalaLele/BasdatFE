@@ -9,6 +9,7 @@ export const promotionSeedData: Promotion[] = [
     startDate: "2026-04-01",
     endDate: "2026-12-31",
     usageLimit: 100,
+    usageCount: 45,
   },
   {
     promotionId: "prm-002",
@@ -18,6 +19,7 @@ export const promotionSeedData: Promotion[] = [
     startDate: "2026-05-01",
     endDate: "2026-05-31",
     usageLimit: 50,
+    usageCount: 10,
   },
   {
     promotionId: "prm-003",
@@ -27,5 +29,6 @@ export const promotionSeedData: Promotion[] = [
     startDate: "2026-03-15",
     endDate: "2026-04-15",
     usageLimit: 200,
+    usageCount: 150,
   },
 ];

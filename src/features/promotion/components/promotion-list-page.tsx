@@ -7,12 +7,12 @@ import {
   Edit3, 
   Trash2, 
   Tag, 
-  Calendar, 
-  Users, 
+  ChevronDown,
   X,
   AlertTriangle,
-  ChevronDown,
-  Info
+  Percent,
+  CheckCircle2,
+  PieChart
 } from "lucide-react";
 import { promotionSeedData } from "../data/promotion-seed";
 import { Promotion, DiscountType } from "../types";
@@ -26,7 +26,7 @@ function formatDate(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleDateString("id-ID", {
     year: "numeric",
-    month: "long",
+    month: "short",
     day: "numeric",
   });
 }
@@ -40,19 +40,30 @@ type ModalState =
 export function PromotionListPage({ role }: { role: RoleName }) {
   const [promotions, setPromotions] = useState<Promotion[]>(promotionSeedData);
   const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<DiscountType | "All">("All");
   const [modal, setModal] = useState<ModalState>({ kind: "closed" });
 
   const isAdmin = role === "admin";
 
   const filteredPromotions = useMemo(() => {
-    return promotions.filter(p => 
-      p.promoCode.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [promotions, searchQuery]);
+    return promotions.filter(p => {
+      const matchesSearch = p.promoCode.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesType = typeFilter === "All" || p.discountType === typeFilter;
+      return matchesSearch && matchesType;
+    });
+  }, [promotions, searchQuery, typeFilter]);
 
-  function handleCreate(data: Omit<Promotion, "promotionId">) {
+  const stats = useMemo(() => {
+    const total = filteredPromotions.length;
+    const totalUsage = filteredPromotions.reduce((acc, curr) => acc + curr.usageCount, 0);
+    const totalPercentage = filteredPromotions.filter(p => p.discountType === "Percentage").length;
+    return { total, totalUsage, totalPercentage };
+  }, [filteredPromotions]);
+
+  function handleCreate(data: Omit<Promotion, "promotionId" | "usageCount">) {
     const newPromo: Promotion = {
       ...data,
+      usageCount: 0,
       promotionId: `prm-${String(promotions.length + 1).padStart(3, "0")}`,
     };
     setPromotions(prev => [newPromo, ...prev]);
@@ -90,35 +101,143 @@ export function PromotionListPage({ role }: { role: RoleName }) {
         )}
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" size={17} />
-        <input
-          type="text"
-          placeholder="Cari Kode Promo..."
-          className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm font-semibold text-slate-700 shadow-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+      {/* Stats Cards */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard 
+          label="Total Promo" 
+          value={stats.total.toString()} 
+          icon={<Tag className="text-blue-600" size={20} />} 
+          color="bg-blue-50"
+        />
+        <StatCard 
+          label="Total Penggunaan" 
+          value={stats.totalUsage.toString()} 
+          icon={<CheckCircle2 className="text-emerald-600" size={20} />} 
+          color="bg-emerald-50"
+        />
+        <StatCard 
+          label="Tipe Persentase" 
+          value={stats.totalPercentage.toString()} 
+          icon={<PieChart className="text-amber-600" size={20} />} 
+          color="bg-amber-50"
         />
       </div>
 
-      {/* Grid */}
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredPromotions.length === 0 ? (
-          <div className="col-span-full rounded-xl border border-dashed border-slate-200 bg-white px-4 py-12 text-center text-sm font-bold text-slate-400">
-            Tidak ada promosi yang ditemukan.
-          </div>
-        ) : (
-          filteredPromotions.map((promo) => (
-            <PromotionCard 
-              key={promo.promotionId} 
-              promotion={promo} 
-              isAdmin={isAdmin} 
-              onEdit={() => setModal({ kind: "update", promotion: promo })}
-              onDelete={() => setModal({ kind: "delete", promotion: promo })}
-            />
-          ))
-        )}
+      {/* Filters & Search */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" size={17} />
+          <input
+            type="text"
+            placeholder="Cari Kode Promo..."
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm font-semibold text-slate-700 shadow-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 uppercase"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="relative w-full sm:w-48">
+          <select
+            className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-4 pr-10 text-sm font-semibold text-slate-600 shadow-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value as any)}
+          >
+            <option value="All">Semua Tipe Diskon</option>
+            <option value="Percentage">Persentase</option>
+            <option value="Nominal">Nominal</option>
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/50 border-b border-slate-100">
+                <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Kode Promo</th>
+                <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Tipe Diskon</th>
+                <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Nilai Diskon</th>
+                <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Periode Validitas</th>
+                <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 text-center">Penggunaan</th>
+                {isAdmin && (
+                  <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 text-center">Action</th>
+                )}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {filteredPromotions.length === 0 ? (
+                <tr>
+                  <td colSpan={isAdmin ? 6 : 5} className="px-6 py-12 text-center text-sm font-bold text-slate-400 italic">
+                    Tidak ada promosi yang ditemukan.
+                  </td>
+                </tr>
+              ) : (
+                filteredPromotions.map((promo) => {
+                  const isExpired = new Date(promo.endDate) < new Date();
+                  const isFullyUsed = promo.usageCount >= promo.usageLimit;
+                  return (
+                    <tr key={promo.promotionId} className={`group hover:bg-slate-50/50 transition-colors ${(isExpired || isFullyUsed) ? 'opacity-60' : ''}`}>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-black text-slate-900 tracking-tight">{promo.promoCode}</span>
+                          {isExpired && <span className="rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600 border border-red-100">Expired</span>}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                          promo.discountType === "Percentage" ? "bg-amber-50 text-amber-700 border border-amber-100" : "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                        }`}>
+                          {promo.discountType === "Percentage" ? <Percent size={10} /> : <Tag size={10} />}
+                          {promo.discountType === "Percentage" ? "Persentase" : "Nominal"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm font-bold text-blue-600">
+                        {promo.discountType === "Percentage" ? `${promo.discountValue}%` : formatCurrency(promo.discountValue)}
+                      </td>
+                      <td className="px-6 py-4 text-xs font-semibold text-slate-500">
+                        {formatDate(promo.startDate)} - {formatDate(promo.endDate)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col items-center">
+                           <span className="text-sm font-bold text-slate-700">
+                             {promo.usageCount} <span className="text-slate-400 font-medium">/ {promo.usageLimit}</span>
+                           </span>
+                           <div className="w-16 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
+                             <div 
+                               className={`h-full rounded-full ${isFullyUsed ? 'bg-red-500' : 'bg-blue-500'}`} 
+                               style={{ width: `${Math.min(100, (promo.usageCount / promo.usageLimit) * 100)}%` }}
+                             />
+                           </div>
+                        </div>
+                      </td>
+                      {isAdmin && (
+                        <td className="px-6 py-4 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <button 
+                              className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition"
+                              onClick={() => setModal({ kind: "update", promotion: promo })}
+                              title="Edit"
+                            >
+                              <Edit3 size={16} />
+                            </button>
+                            <button 
+                              className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition"
+                              onClick={() => setModal({ kind: "delete", promotion: promo })}
+                              title="Delete"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Modals */}
@@ -150,62 +269,19 @@ export function PromotionListPage({ role }: { role: RoleName }) {
   );
 }
 
-function PromotionCard({ 
-  promotion, 
-  isAdmin, 
-  onEdit, 
-  onDelete 
-}: { 
-  promotion: Promotion; 
-  isAdmin: boolean; 
-  onEdit: () => void; 
-  onDelete: () => void;
-}) {
-  const isExpired = new Date(promotion.endDate) < new Date();
-
+function StatCard({ label, value, icon, color }: { label: string; value: string; icon: React.ReactNode; color: string }) {
   return (
-    <article className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
-      <div className="flex items-start justify-between">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-          <Tag size={24} />
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+      <div className="flex items-center gap-4">
+        <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${color}`}>
+          {icon}
         </div>
-        {isAdmin && (
-          <div className="flex gap-1">
-            <button 
-              className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition"
-              onClick={onEdit}
-            >
-              <Edit3 size={16} />
-            </button>
-            <button 
-              className="p-2 rounded-lg text-red-600 hover:bg-red-50 transition"
-              onClick={onDelete}
-            >
-              <Trash2 size={16} />
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div className="mt-4">
-        <h3 className="text-xl font-black text-slate-900 tracking-tight">{promotion.promoCode}</h3>
-        <p className="text-sm font-bold text-blue-600 mt-1">
-          Diskon {promotion.discountType === "Percentage" ? `${promotion.discountValue}%` : formatCurrency(promotion.discountValue)}
-        </p>
-      </div>
-
-      <div className="mt-6 space-y-3">
-        <div className="flex items-center gap-3 text-xs font-semibold text-slate-500">
-          <Calendar size={14} className="text-slate-400" />
-          <span>{formatDate(promotion.startDate)} - {formatDate(promotion.endDate)}</span>
-          {isExpired && <span className="rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">Expired</span>}
-        </div>
-        <div className="flex items-center gap-3 text-xs font-semibold text-slate-500">
-          <Users size={14} className="text-slate-400" />
-          <span>Batas Penggunaan: <span className="text-slate-900 font-bold">{promotion.usageLimit}x</span></span>
+        <div>
+          <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">{label}</p>
+          <p className="text-xl font-black text-slate-900 mt-0.5">{value}</p>
         </div>
       </div>
-    </article>
+    </div>
   );
 }
 
@@ -220,7 +296,7 @@ function PromotionFormModal({
   mode: "create" | "update"; 
   promotion?: Promotion; 
   onClose: () => void; 
-  onSubmit?: (data: Omit<Promotion, "promotionId">) => void;
+  onSubmit?: (data: Omit<Promotion, "promotionId" | "usageCount">) => void;
   onSubmitUpdate?: (data: Promotion) => void;
   existingCodes: string[];
 }) {
@@ -261,7 +337,7 @@ function PromotionFormModal({
     };
 
     if (isUpdate && promotion && onSubmitUpdate) {
-      onSubmitUpdate({ ...data, promotionId: promotion.promotionId });
+      onSubmitUpdate({ ...data, promotionId: promotion.promotionId, usageCount: promotion.usageCount });
     } else if (onSubmit) {
       onSubmit(data);
     }
@@ -370,6 +446,12 @@ function PromotionFormModal({
           </div>
         </form>
       </div>
+      <style>{`
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
     </div>
   );
 }
@@ -408,6 +490,12 @@ function DeleteConfirmModal({
           </button>
         </div>
       </div>
+      <style>{`
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
     </div>
   );
 }
