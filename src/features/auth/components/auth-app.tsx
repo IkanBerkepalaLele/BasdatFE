@@ -12,6 +12,7 @@ import { TicketListPage } from "@/features/ticket/components/ticket-list-page";
 import { SeatListPage } from "@/features/seat/components/seat-list-page";
 import { OrderListPage } from "@/features/order/components/order-list-page";
 import { CheckoutPage } from "@/features/order/components/checkout-page";
+import { PromotionListPage } from "@/features/promotion/components/promotion-list-page";
 import { roleLabels } from "../data/auth-seed";
 import {
   authenticate,
@@ -25,7 +26,7 @@ import { LoginPage } from "./login-page";
 import { RegisterPage } from "./register-page";
 
 type AuthScreen = "login" | "register";
-type AppPage = "dashboard" | "profile" | "venue" | "event" | "ticket" | "seat" | "artist" | "ticket-category" | "order" | "checkout";
+type AppPage = "dashboard" | "profile" | "venue" | "event" | "ticket" | "seat" | "artist" | "ticket-category" | "order" | "checkout" | "promotion";
 const sessionStorageKey = "tiktaktuk-auth-user-id";
 
 function readInitialSession() {
@@ -221,6 +222,7 @@ export function AuthApp() {
       onTicket={() => setActivePage("ticket")}
       onSeat={() => setActivePage("seat")}
       onOrder={() => setActivePage("order")}
+      onPromotion={() => setActivePage("promotion")}
       onCheckout={(eventId) => {
         setSelectedEventId(eventId);
         setActivePage("checkout");
@@ -250,6 +252,7 @@ function AuthenticatedApp({
   onTicket,
   onSeat,
   onOrder,
+  onPromotion,
   onCheckout,
   selectedEventId,
   toast,
@@ -269,6 +272,7 @@ function AuthenticatedApp({
   onTicket: () => void;
   onSeat: () => void;
   onOrder: () => void;
+  onPromotion: () => void;
   onCheckout: (eventId: string) => void;
   onProfileUpdate: (payload: ProfileUpdatePayload) => void;
   selectedEventId: string | null;
@@ -289,6 +293,7 @@ function AuthenticatedApp({
         onTicket={onTicket}
         onSeat={onSeat}
         onOrder={onOrder}
+        onPromotion={onPromotion}
         role={user.role}
       />
       <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -349,6 +354,10 @@ function AuthenticatedApp({
                   : undefined
               }
             />
+          </div>
+        ) : activePage === "promotion" ? (
+          <div className="mt-5">
+            <PromotionListPage role={user.role} />
           </div>
         ) : activePage === "checkout" ? (
           <div className="mt-5">

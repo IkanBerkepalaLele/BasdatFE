@@ -16,6 +16,7 @@ const menuItems: Record<RoleName, string[]> = {
     "Kategori Tiket",
     "Manajemen Tiket",
     "Semua Order",
+    "Promosi",
     "Tiket (Aset)",
     "Order (Aset)",
     "Profile",
@@ -29,6 +30,7 @@ const menuItems: Record<RoleName, string[]> = {
     "Kategori Tiket",
     "Manajemen Tiket",
     "Semua Order",
+    "Promosi",
     "Tiket (Aset)",
     "Order (Aset)",
     "Profile",
@@ -48,6 +50,7 @@ export function AppNavbar({
   onTicket,
   onSeat,
   onOrder,
+  onPromotion,
   role,
   }: {
   onArtist: () => void;
@@ -61,6 +64,7 @@ export function AppNavbar({
   onTicket: () => void;
   onSeat: () => void;
   onOrder: () => void;
+  onPromotion: () => void;
   role: RoleName;
   }) {
   const [open, setOpen] = useState(false);
@@ -89,6 +93,8 @@ export function AppNavbar({
       onSeat(); 
     } else if (label === "Semua Order" || label === "Pesanan") {
       onOrder();
+    } else if (label === "Promosi") {
+      onPromotion();
     } else {
       onFeatureBlocked(label);
     }
@@ -104,8 +110,7 @@ export function AppNavbar({
         <nav className="hidden min-w-0 flex-1 items-center justify-start gap-1 overflow-x-auto px-2 lg:flex">
           {items.map((item) => {
             const active = item === "Dashboard" || item === "Semua Event";
-            const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Semua Event" || item === "Manajemen Tiket" || item === "Tiket Saya" || item === "Manajemen Kursi" || item === "Manajemen Artist" || item === "Artis" || item === "Kategori Tiket" || item === "Semua Order" || item === "Pesanan";
-
+            const clickable = item === "Dashboard" || item === "Profile" || item === "Logout" || item === "Manajemen Venue" || item === "Venue" || item === "Event Saya" || item === "Cari Event" || item === "Semua Event" || item === "Manajemen Tiket" || item === "Tiket Saya" || item === "Manajemen Kursi" || item === "Manajemen Artist" || item === "Artis" || item === "Kategori Tiket" || item === "Semua Order" || item === "Pesanan" || item === "Promosi";
             return (
               <button
                 className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-bold transition ${
